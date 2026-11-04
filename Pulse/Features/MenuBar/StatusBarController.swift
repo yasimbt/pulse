@@ -12,7 +12,8 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
         let kinds: [ModuleKind]
         let item: NSStatusItem
         var lastSegments: [StatusSegment]?
-        var lastUpdate: UInt64?
+        var lastAppearance: NSAppearance.Name?
+        let contentLayer = CALayer()
 
         init(kinds: [ModuleKind], item: NSStatusItem) {
             self.kinds = kinds
@@ -28,7 +29,6 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
     private let model: LiveModel
     private var entries: [Entry] = []
     private var layout: [[ModuleKind]] = []
-    private var tick: UInt64 = 0
     private let popover = NSPopover()
 
     init(model: LiveModel) {
@@ -50,48 +50,56 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
             layout = newLayout
             entries = newLayout.reversed().map(makeEntry)
         }
-        // Settings changes show at once rather than waiting for a turn.
-        entries.forEach {
-            $0.lastSegments = nil
-            $0.lastUpdate = nil
-        }
+        // Forces a redraw, because the style or colour may have changed.
+        entries.forEach { $0.lastSegments = nil }
     }
 
     func update(with settings: PulseSettings) {
         guard let snapshot = model.snapshot else { return }
-        tick += 1
-
-        var pending: [StatusUpdatePolicy.Candidate] = []
-        var content: [Int: [(StatusSegment, ModuleReading)]] = [:]
-        for (index, entry) in entries.enumerated() {
+        for entry in entries {
             let configs = entry.kinds.compactMap { kind in settings.modules.first { $0.kind == kind } }
             let parts = configs.compactMap { config -> (StatusSegment, ModuleReading)? in
                 guard let reading = reading(config.kind, snapshot) else { return nil }
                 return (segment(config, reading), reading)
             }
-            if parts.map(\.0) != entry.lastSegments {
-                content[index] = parts
-                pending.append(.init(index: index, lastUpdate: entry.lastUpdate))
+            // A layer isn't recoloured by macOS the way a template image is, so redraw on a change.
+            let appearanceChanged = entry.lastAppearance != entry.item.button?.effectiveAppearance.name
+            if parts.map(\.0) != entry.lastSegments || appearanceChanged {
+                draw(entry, parts)
             }
-        }
-        for index in StatusUpdatePolicy.itemsToUpdate(pending: pending) {
-            if let parts = content[index] { draw(entries[index], parts) }
         }
     }
 
     private func draw(_ entry: Entry, _ parts: [(StatusSegment, ModuleReading)]) {
         let segments = parts.map(\.0)
         entry.lastSegments = segments
-        entry.lastUpdate = tick
 
         // A module with no data, such as Battery on a desktop Mac, is hidden.
         let isVisible = !segments.isEmpty
         if entry.item.isVisible != isVisible { entry.item.isVisible = isVisible }
         guard let button = entry.item.button else { return }
-        let image = StatusItemRenderer.image(for: segments)
+        let appearance = button.effectiveAppearance
+        entry.lastAppearance = appearance.name
+        let image = StatusItemRenderer.image(
+            for: segments,
+            scale: button.window?.backingScaleFactor ?? 2,
+            appearance: appearance
+        )
         let length = image.size.width + Self.itemPadding
         if entry.item.length != length { entry.item.length = length }
-        button.image = image
+
+        // Updating a sublayer costs about 1.3 ms. Setting `button.image` costs about 16 ms, because
+        // AppKit snapshots the item for MenuBarAgent. See docs/m1-findings.md.
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        entry.contentLayer.contents = image
+        entry.contentLayer.frame = CGRect(
+            x: Self.itemPadding / 2,
+            y: (button.bounds.height - image.size.height) / 2,
+            width: image.size.width,
+            height: image.size.height
+        )
+        CATransaction.commit()
         button.setAccessibilityLabel(parts.map(\.1.accessibilityValue).joined(separator: ", "))
     }
 
@@ -103,9 +111,11 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         item.button?.target = self
         item.button?.action = #selector(togglePanel(_:))
-        item.button?.imagePosition = .imageOnly
+        item.button?.wantsLayer = true
         item.button?.tag = layout.firstIndex(of: kinds) ?? 0
-        return Entry(kinds: kinds, item: item)
+        let entry = Entry(kinds: kinds, item: item)
+        item.button?.layer?.addSublayer(entry.contentLayer)
+        return entry
     }
 
     private func reading(_ kind: ModuleKind, _ snapshot: Snapshot) -> ModuleReading? {

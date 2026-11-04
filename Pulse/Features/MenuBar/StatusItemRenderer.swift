@@ -42,12 +42,12 @@ enum StatusItemRenderer {
     private static let sparkWidth: CGFloat = 36
     private static let gaugeSize: CGFloat = 14
 
-    static func image(for segments: [StatusSegment]) -> NSImage {
+    /// Colours resolve against `appearance`, which is the menu bar's rather than the app's.
+    static func image(for segments: [StatusSegment], scale: CGFloat = 2, appearance: NSAppearance = .currentDrawing()) -> NSImage {
         let widths = segments.map(width)
         let total = widths.reduce(0, +) + segmentSpacing * CGFloat(max(0, segments.count - 1))
         let size = NSSize(width: max(1, ceil(total)), height: height)
-        // Drawn once into a bitmap. A drawing-handler image would rerun this on every snapshot.
-        let scale = NSScreen.main?.backingScaleFactor ?? 2
+        // Drawn once into a bitmap, ready to hand to a layer.
         let image = NSImage(size: size)
         if let bitmap = NSBitmapImageRep(
             bitmapDataPlanes: nil,
@@ -64,16 +64,16 @@ enum StatusItemRenderer {
             bitmap.size = size
             NSGraphicsContext.saveGraphicsState()
             NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: bitmap)
-            var originX: CGFloat = 0
-            for (segment, width) in zip(segments, widths) {
-                draw(segment, at: originX)
-                originX += width + segmentSpacing
+            appearance.performAsCurrentDrawingAppearance {
+                var originX: CGFloat = 0
+                for (segment, width) in zip(segments, widths) {
+                    draw(segment, at: originX)
+                    originX += width + segmentSpacing
+                }
             }
             NSGraphicsContext.restoreGraphicsState()
             image.addRepresentation(bitmap)
         }
-        // A template image lets macOS match the menu bar's light or dark appearance.
-        image.isTemplate = segments.allSatisfy { $0.tint == .system }
         return image
     }
 

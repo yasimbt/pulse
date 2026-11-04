@@ -44,9 +44,10 @@ Reproduce with `Tools/spikes/m1-sources` and `Tools/spikes/m1-details`.
   rates come from differences between runs. It runs every 5 s, only while the network panel is open.
 
 ## Menu-bar update cost
-On this OS, status items are drawn by `MenuBarAgent`, and every image change is snapshotted by
-AppKit (`-[NSStatusItem _updateReplicant:]`) and sent to it. `Tools/spikes/statusitem-cost` measured
-one item in isolation with no collectors, using `ps` CPU time over 30 s:
+On this OS, status items are drawn by `MenuBarAgent`. Setting `button.image` or `button.title` makes
+AppKit snapshot the item and send it over (`-[NSStatusItem _updateReplicant:]`).
+`Tools/spikes/statusitem-cost` measured one item in isolation with no collectors, using `ps` CPU
+time over 30 s:
 
 | Strategy | CPU at 1 update/s | Per update |
 |---|---|---|
@@ -56,9 +57,23 @@ one item in isolation with no collectors, using `ps` CPU time over 30 s:
 | Template bitmap, 200 pt | 1.80% | 18.0 ms |
 | Plain bitmap, 200 pt | 1.73% | 17.3 ms |
 | `button.title` | 2.47% | 24.7 ms |
-| Sublayer `contents` | 0.13% | 1.3 ms (on-screen effect unverified) |
+| Sublayer `contents` | 0.13% | 1.3 ms |
 
-- Cost is roughly constant per update. Neither size nor template mode matters much.
-- Full Pulse in combined mode at one update per second: 2.5% over 60 s.
-- The same binary has read from 2.4% to 4.7% between runs, so compare several runs.
+**Decision:** Pulse draws into a `CALayer` added to the status button. The spike's sublayer was
+confirmed moving on an external display. This relies on behaviour Apple doesn't document, so
+recheck it on each new macOS release.
+
+A layer isn't recoloured the way a template image is, so Pulse draws using the button's
+`effectiveAppearance` and redraws when that changes.
+
+### Full app, Release build, 1 s rate, panels and Settings closed
+| Configuration | CPU | Footprint |
+|---|---|---|
+| Button images, one wide combined item | about 2.5% | 23 MB |
+| Layer, 5 sparklines, separate items | 0.45-0.49% over 105 s (2 runs) | 28 MB |
+| Layer, 5 text items, separate | about 0.50% over a nominal 60 s (overstated) | 28 MB |
+| Layer, 5 sparklines, combined | about 0.32% over a nominal 60 s (overstated) | 22 MB |
+
+- Capping redraws at 3 items per tick made no measurable difference (0.47-0.51%), so there is no cap.
+- Single runs of the same binary vary, and the pass margin is thin. Compare several runs.
 - Measurements must exclude open panels and Settings, which cost far more than the closed state.
