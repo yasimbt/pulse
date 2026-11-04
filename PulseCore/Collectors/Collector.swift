@@ -6,3 +6,7 @@ public protocol Collector: Sendable {
     var id: MetricID { get }
     func sample() async throws -> Sample
 }
+
+public enum CollectorError: Error, Equatable {
+    case unavailable(String)
+}

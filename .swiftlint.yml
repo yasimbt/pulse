@@ -2,9 +2,19 @@ included:
   - Pulse
   - PulseCore
   - PulseCoreTests
-  - Tools
 excluded:
   - build
+
+disabled_rules:
+  - large_tuple # Small labelled tuples are clearer than one-off structs for private state.
+  - optional_data_string_conversion # nettop and registry bytes should decode even if malformed.
+
+line_length:
+  warning: 150
+  error: 200
+
+identifier_name:
+  excluded: [id, up, to, at]
 
 file_length:
   warning: 400

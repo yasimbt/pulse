@@ -17,6 +17,25 @@ private struct StubCollector: Collector {
 }
 
 @Test func metricIDsCompareByRawValue() {
-    #expect(MetricID(rawValue: "cpu") == MetricID(rawValue: "cpu"))
-    #expect(MetricID(rawValue: "cpu") != MetricID(rawValue: "gpu"))
+    #expect(MetricID.cpu == MetricID(rawValue: "cpu"))
+    #expect(MetricID.cpu != MetricID.memory)
+}
+
+@Test func liveCollectorsReadThisMachine() async throws {
+    let cpu = CPUCollector()
+    _ = try await cpu.sample()
+    try await Task.sleep(for: .milliseconds(100))
+    let sample = try await cpu.sample()
+    #expect(!sample.cores.isEmpty)
+    #expect((0...1).contains(sample.total))
+
+    let memory = try await MemoryCollector().sample()
+    #expect(memory.totalBytes > 0)
+    #expect(memory.usedBytes <= memory.totalBytes)
+
+    let disk = try await DiskCollector().sample()
+    #expect(disk.totalBytes > 0)
+
+    #expect(try await NetworkCollector().sample().downBytesPerSecond >= 0)
+    #expect(try await ProcessCollector().sample().unreadableCount >= 0)
 }

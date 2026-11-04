@@ -1,0 +1,9 @@
+{
+  "CurrentCapacity": 95, "MaxCapacity": 100, "CycleCount": 3, "Voltage": 13107,
+  "Amperage": 0, "InstantAmperage": 0, "IsCharging": 0, "ExternalConnected": 1,
+  "FullyCharged": 0, "TimeRemaining": 65535, "AvgTimeToEmpty": 65535, "AvgTimeToFull": 65535,
+  "BatteryData": {
+    "AppleRawCurrentCapacity": 4409, "AppleRawMaxCapacity": 4645, "DesignCapacity": 4629,
+    "FullChargeCapacity": 4645, "NominalChargeCapacity": 4772, "CurrentCapacity": 95, "MaxCapacity": 100
+  }
+}

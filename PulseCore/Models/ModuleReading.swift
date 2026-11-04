@@ -1,0 +1,54 @@
+/// What the menu bar shows for a module, independent of how it is drawn.
+public struct ModuleReading: Sendable, Equatable {
+    /// The compact value drawn in the menu bar.
+    public let text: String
+    /// 0...1 for bar and gauge renderers.
+    public let fraction: Double
+    /// The series a sparkline plots. Network plots download.
+    public let series: SeriesID
+    /// Full sentence for VoiceOver.
+    public let accessibilityValue: String
+
+    /// Floor for auto-scaling, so an idle link does not fill the bar with a few bytes.
+    static let minimumRateScale = 1_000_000.0
+
+    public static func make(_ kind: ModuleKind, snapshot: Snapshot, recentPeak: Double) -> ModuleReading? {
+        switch kind {
+        case .cpu:
+            return snapshot.cpu.map {
+                let value = MetricFormat.percent($0.total)
+                return ModuleReading(text: value, fraction: $0.total, series: .cpuTotal, accessibilityValue: "CPU \(value) used")
+            }
+        case .memory:
+            return snapshot.memory.map {
+                let value = MetricFormat.percent($0.usedFraction)
+                return ModuleReading(text: value, fraction: $0.usedFraction, series: .memoryUsed, accessibilityValue: "Memory \(value) used")
+            }
+        case .disk:
+            return snapshot.disk.map {
+                let value = MetricFormat.percent($0.usedFraction)
+                return ModuleReading(text: value, fraction: $0.usedFraction, series: .diskRead, accessibilityValue: "Disk \(value) full")
+            }
+        case .network:
+            return snapshot.network.map {
+                ModuleReading(
+                    text: "↓\(MetricFormat.compactRate($0.downBytesPerSecond)) ↑\(MetricFormat.compactRate($0.upBytesPerSecond))",
+                    fraction: min(1, $0.downBytesPerSecond / max(recentPeak, minimumRateScale)),
+                    series: .networkDown,
+                    accessibilityValue: "Network \(MetricFormat.rate($0.downBytesPerSecond)) down, \(MetricFormat.rate($0.upBytesPerSecond)) up"
+                )
+            }
+        case .battery:
+            return snapshot.battery.map {
+                let value = MetricFormat.percent($0.chargeFraction)
+                let state = $0.isCharging ? "charging" : ($0.isExternalPowerConnected ? "on power adapter" : "on battery")
+                return ModuleReading(
+                    text: value,
+                    fraction: $0.chargeFraction,
+                    series: .batteryCharge,
+                    accessibilityValue: "Battery \(value), \(state)"
+                )
+            }
+        }
+    }
+}
