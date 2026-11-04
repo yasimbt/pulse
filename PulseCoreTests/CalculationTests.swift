@@ -178,3 +178,33 @@ private func process(_ pid: Int32, cpu: UInt64, footprint: UInt64 = 0, read: UIn
 @Test func missingSampleHidesReading() {
     #expect(ModuleReading.make(.battery, snapshot: Snapshot(timestamp: Date()), recentPeak: 0) == nil)
 }
+
+// MARK: - Menu-bar update policy
+
+@Test func updatesOnlyTheLongestWaitingItem() {
+    let pending: [StatusUpdatePolicy.Candidate] = [.init(index: 0, lastUpdate: 9), .init(index: 1, lastUpdate: 3), .init(index: 2, lastUpdate: 7)]
+    #expect(StatusUpdatePolicy.itemsToUpdate(pending: pending) == [1])
+}
+
+@Test func undrawnItemsAllUpdateImmediately() {
+    let pending: [StatusUpdatePolicy.Candidate] = [.init(index: 0, lastUpdate: nil), .init(index: 1, lastUpdate: 3), .init(index: 2, lastUpdate: nil)]
+    #expect(StatusUpdatePolicy.itemsToUpdate(pending: pending) == [0, 2])
+}
+
+@Test func nothingPendingUpdatesNothing() {
+    #expect(StatusUpdatePolicy.itemsToUpdate(pending: []).isEmpty)
+}
+
+/// Every changing item must get a turn, or a busy module could starve the others.
+@Test func changingItemsTakeTurnsWithoutStarvation() {
+    var last: [UInt64?] = [0, 0, 0, 0, 0]
+    var updates = [0, 0, 0, 0, 0]
+    for tick in UInt64(1)...50 {
+        let pending = last.enumerated().map { StatusUpdatePolicy.Candidate(index: $0.offset, lastUpdate: $0.element) }
+        for index in StatusUpdatePolicy.itemsToUpdate(pending: pending) {
+            last[index] = tick
+            updates[index] += 1
+        }
+    }
+    #expect(updates == [10, 10, 10, 10, 10])
+}

@@ -46,7 +46,7 @@ public actor Sampler {
 
     public func start() {
         guard task == nil else { return }
-        task = Task { [weak self] in
+        task = Task(priority: .utility) { [weak self] in
             // Rates need two readings, so the first pass only sets the baselines.
             _ = await self?.collect()
             while !Task.isCancelled {

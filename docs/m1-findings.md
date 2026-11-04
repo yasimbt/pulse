@@ -42,3 +42,23 @@ Reproduce with `Tools/spikes/m1-sources` and `Tools/spikes/m1-details`.
 ## nettop
 - `nettop -P -L 1 -x -J bytes_in,bytes_out -n` takes about 14 ms and prints cumulative totals, so
   rates come from differences between runs. It runs every 5 s, only while the network panel is open.
+
+## Menu-bar update cost
+On this OS, status items are drawn by `MenuBarAgent`, and every image change is snapshotted by
+AppKit (`-[NSStatusItem _updateReplicant:]`) and sent to it. `Tools/spikes/statusitem-cost` measured
+one item in isolation with no collectors, using `ps` CPU time over 30 s:
+
+| Strategy | CPU at 1 update/s | Per update |
+|---|---|---|
+| No updates | 0.03% | - |
+| Template bitmap, 40 pt | 1.67% | 16.7 ms |
+| Plain bitmap, 40 pt | 1.57% | 15.7 ms |
+| Template bitmap, 200 pt | 1.80% | 18.0 ms |
+| Plain bitmap, 200 pt | 1.73% | 17.3 ms |
+| `button.title` | 2.47% | 24.7 ms |
+| Sublayer `contents` | 0.13% | 1.3 ms (on-screen effect unverified) |
+
+- Cost is roughly constant per update. Neither size nor template mode matters much.
+- Full Pulse in combined mode at one update per second: 2.5% over 60 s.
+- The same binary has read from 2.4% to 4.7% between runs, so compare several runs.
+- Measurements must exclude open panels and Settings, which cost far more than the closed state.

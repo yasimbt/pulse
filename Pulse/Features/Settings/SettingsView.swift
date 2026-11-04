@@ -1,0 +1,112 @@
+import PulseCore
+import ServiceManagement
+import SwiftUI
+
+struct SettingsView: View {
+    @Bindable var store: SettingsStore
+    let model: LiveModel
+
+    var body: some View {
+        Form {
+            Section("Modules") {
+                ForEach(store.settings.modules.indices, id: \.self) { index in
+                    ModuleRow(
+                        config: $store.settings.modules[index],
+                        isAvailable: !model.unavailableModules.contains(store.settings.modules[index].kind),
+                        moveUp: index > 0 ? { store.settings.modules.swapAt(index, index - 1) } : nil,
+                        moveDown: index < store.settings.modules.count - 1 ? { store.settings.modules.swapAt(index, index + 1) } : nil
+                    )
+                }
+                Toggle("Show all modules in one menu-bar item", isOn: $store.settings.isCombined)
+            }
+            Section("General") {
+                Picker("Sample rate", selection: $store.settings.sampleInterval) {
+                    ForEach(PulseSettings.sampleIntervals, id: \.self) { interval in
+                        Text(interval == 1 ? "1 second" : "\(interval.formatted()) seconds").tag(interval)
+                    }
+                }
+                LaunchAtLoginToggle()
+            }
+            Section("Pulse's own overhead") {
+                OverheadRows(model: model)
+            }
+        }
+        .formStyle(.grouped)
+        .frame(width: 520)
+        .fixedSize(horizontal: false, vertical: true)
+    }
+}
+
+/// Its own view, so that only these rows redraw on each sample.
+private struct OverheadRows: View {
+    let model: LiveModel
+
+    var body: some View {
+        if let usage = model.selfUsage {
+            MetricRow("CPU now", MetricFormat.cores(usage.cpuCores))
+            MetricRow("CPU average since launch", String(format: "%.2f%%", usage.averageCPUCores * 100))
+            MetricRow("Memory", MetricFormat.memory(Double(usage.footprintBytes)))
+        }
+    }
+}
+
+private struct ModuleRow: View {
+    @Binding var config: ModuleConfig
+    let isAvailable: Bool
+    let moveUp: (() -> Void)?
+    let moveDown: (() -> Void)?
+
+    var body: some View {
+        HStack {
+            Toggle(config.kind.title, isOn: $config.isEnabled)
+                .frame(width: 100, alignment: .leading)
+            if !isAvailable {
+                Text("Not available").font(.caption).foregroundStyle(.secondary)
+            }
+            Spacer()
+            Picker("\(config.kind.title) style", selection: $config.renderer) {
+                ForEach(RendererKind.allCases) { Text($0.title).tag($0) }
+            }
+            .labelsHidden()
+            .frame(width: 100)
+            Picker("\(config.kind.title) colour", selection: $config.tint) {
+                ForEach(ModuleTint.allCases) { Text($0.title).tag($0) }
+            }
+            .labelsHidden()
+            .frame(width: 90)
+            Button { moveUp?() } label: { Image(systemName: "chevron.up") }
+                .disabled(moveUp == nil)
+                .accessibilityLabel("Move \(config.kind.title) left in the menu bar")
+            Button { moveDown?() } label: { Image(systemName: "chevron.down") }
+                .disabled(moveDown == nil)
+                .accessibilityLabel("Move \(config.kind.title) right in the menu bar")
+        }
+    }
+}
+
+/// `SMAppService.mainApp` registers this app bundle to start when the user logs in.
+private struct LaunchAtLoginToggle: View {
+    @State private var isOn = SMAppService.mainApp.status == .enabled
+    @State private var errorMessage: String?
+
+    var body: some View {
+        Toggle("Launch at login", isOn: Binding(get: { isOn }, set: change))
+        if let errorMessage {
+            Text(errorMessage).font(.caption).foregroundStyle(.secondary)
+        }
+    }
+
+    private func change(_ newValue: Bool) {
+        do {
+            if newValue {
+                try SMAppService.mainApp.register()
+            } else {
+                try SMAppService.mainApp.unregister()
+            }
+            errorMessage = nil
+        } catch {
+            errorMessage = "Couldn't change this: \(error.localizedDescription)"
+        }
+        isOn = SMAppService.mainApp.status == .enabled
+    }
+}

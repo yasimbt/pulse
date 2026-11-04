@@ -1,0 +1,154 @@
+import AppKit
+import PulseCore
+import SwiftUI
+
+/// Owns the menu-bar items and their popover.
+///
+/// Uses `NSStatusItem` rather than SwiftUI's `MenuBarExtra`, whose scenes are fixed at compile
+/// time and whose labels cannot draw custom graphics. Modules need user-set order and sparklines.
+@MainActor
+final class StatusBarController: NSObject, NSPopoverDelegate {
+    private final class Entry {
+        let kinds: [ModuleKind]
+        let item: NSStatusItem
+        var lastSegments: [StatusSegment]?
+        var lastUpdate: UInt64?
+
+        init(kinds: [ModuleKind], item: NSStatusItem) {
+            self.kinds = kinds
+            self.item = item
+        }
+    }
+
+    private static let itemPadding: CGFloat = 10
+
+    var actions = PanelActions(openSettings: {}, quit: {}, openActivityMonitor: {})
+    var onPanelChange: ((Set<ModuleKind>?) -> Void)?
+
+    private let model: LiveModel
+    private var entries: [Entry] = []
+    private var layout: [[ModuleKind]] = []
+    private var tick: UInt64 = 0
+    private let popover = NSPopover()
+
+    init(model: LiveModel) {
+        self.model = model
+        super.init()
+        // Closes when the user clicks elsewhere.
+        popover.behavior = .transient
+        popover.delegate = self
+    }
+
+    /// Rebuilds the items if the module list changed. macOS puts each new item to the left of
+    /// the existing ones, so they are added in reverse to get left-to-right order.
+    func apply(_ settings: PulseSettings) {
+        let enabled = settings.enabledModules.map(\.kind)
+        let newLayout = settings.isCombined ? (enabled.isEmpty ? [] : [enabled]) : enabled.map { [$0] }
+        if newLayout != layout {
+            closePanel()
+            entries.forEach { NSStatusBar.system.removeStatusItem($0.item) }
+            layout = newLayout
+            entries = newLayout.reversed().map(makeEntry)
+        }
+        // Settings changes show at once rather than waiting for a turn.
+        entries.forEach {
+            $0.lastSegments = nil
+            $0.lastUpdate = nil
+        }
+    }
+
+    func update(with settings: PulseSettings) {
+        guard let snapshot = model.snapshot else { return }
+        tick += 1
+
+        var pending: [StatusUpdatePolicy.Candidate] = []
+        var content: [Int: [(StatusSegment, ModuleReading)]] = [:]
+        for (index, entry) in entries.enumerated() {
+            let configs = entry.kinds.compactMap { kind in settings.modules.first { $0.kind == kind } }
+            let parts = configs.compactMap { config -> (StatusSegment, ModuleReading)? in
+                guard let reading = reading(config.kind, snapshot) else { return nil }
+                return (segment(config, reading), reading)
+            }
+            if parts.map(\.0) != entry.lastSegments {
+                content[index] = parts
+                pending.append(.init(index: index, lastUpdate: entry.lastUpdate))
+            }
+        }
+        for index in StatusUpdatePolicy.itemsToUpdate(pending: pending) {
+            if let parts = content[index] { draw(entries[index], parts) }
+        }
+    }
+
+    private func draw(_ entry: Entry, _ parts: [(StatusSegment, ModuleReading)]) {
+        let segments = parts.map(\.0)
+        entry.lastSegments = segments
+        entry.lastUpdate = tick
+
+        // A module with no data, such as Battery on a desktop Mac, is hidden.
+        let isVisible = !segments.isEmpty
+        if entry.item.isVisible != isVisible { entry.item.isVisible = isVisible }
+        guard let button = entry.item.button else { return }
+        let image = StatusItemRenderer.image(for: segments)
+        let length = image.size.width + Self.itemPadding
+        if entry.item.length != length { entry.item.length = length }
+        button.image = image
+        button.setAccessibilityLabel(parts.map(\.1.accessibilityValue).joined(separator: ", "))
+    }
+
+    func closePanel() {
+        if popover.isShown { popover.performClose(nil) }
+    }
+
+    private func makeEntry(_ kinds: [ModuleKind]) -> Entry {
+        let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        item.button?.target = self
+        item.button?.action = #selector(togglePanel(_:))
+        item.button?.imagePosition = .imageOnly
+        item.button?.tag = layout.firstIndex(of: kinds) ?? 0
+        return Entry(kinds: kinds, item: item)
+    }
+
+    private func reading(_ kind: ModuleKind, _ snapshot: Snapshot) -> ModuleReading? {
+        ModuleReading.make(kind, snapshot: snapshot, recentPeak: kind == .network ? model.recentPeak(.networkDown) : 0)
+    }
+
+    private func segment(_ config: ModuleConfig, _ reading: ModuleReading) -> StatusSegment {
+        StatusSegment(
+            label: config.kind.shortLabel,
+            renderer: config.renderer,
+            tint: config.tint,
+            text: reading.text,
+            widthTemplate: config.kind == .network ? "↓999K ↑999K" : "100%",
+            fillSteps: Int((min(1, max(0, reading.fraction)) * Double(StatusSegment.barSteps)).rounded()),
+            spark: config.renderer == .sparkline ? spark(reading.series) : []
+        )
+    }
+
+    private func spark(_ series: SeriesID) -> [Int] {
+        let values = model.history.recentValues(series, count: StatusSegment.sparkColumns)
+        let isFraction = series == .cpuTotal || series == .memoryUsed || series == .batteryCharge
+        let scale = isFraction ? 1 : max(values.max() ?? 0, 1_000_000)
+        return values.map { Int((min(1, $0 / scale) * Double(StatusSegment.sparkSteps)).rounded()) }
+    }
+
+    @objc private func togglePanel(_ sender: NSStatusBarButton) {
+        if popover.isShown {
+            popover.performClose(nil)
+            return
+        }
+        guard layout.indices.contains(sender.tag) else { return }
+        let kinds = layout[sender.tag]
+        let host = NSHostingController(rootView: PanelHost(kinds: kinds, model: model, actions: actions))
+        host.sizingOptions = .preferredContentSize
+        popover.contentViewController = host
+        onPanelChange?(Set(kinds))
+        NSApp.activate()
+        popover.show(relativeTo: sender.bounds, of: sender, preferredEdge: .minY)
+    }
+
+    /// Releases the SwiftUI views so that a closed panel costs no CPU.
+    func popoverDidClose(_ notification: Notification) {
+        popover.contentViewController = nil
+        onPanelChange?(nil)
+    }
+}
