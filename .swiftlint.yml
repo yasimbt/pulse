@@ -1,0 +1,19 @@
+included:
+  - Pulse
+  - PulseCore
+  - PulseCoreTests
+  - Tools
+excluded:
+  - build
+
+file_length:
+  warning: 400
+  error: 600
+
+custom_rules:
+  no_ui_imports_in_core:
+    name: "No UI imports in PulseCore"
+    message: "PulseCore must stay free of SwiftUI/AppKit so the CLI and widgets can use it."
+    included: "/PulseCore/.*\\.swift$"
+    regex: "^\\s*(@\\w+\\s+)?import\\s+(SwiftUI|AppKit|UIKit)\\b"
+    severity: error

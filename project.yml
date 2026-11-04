@@ -1,0 +1,78 @@
+name: Pulse
+
+options:
+  bundleIdPrefix: com.pulse
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    ARCHS: arm64
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    # "Sign to Run Locally": ad-hoc signature, no Apple Developer account needed.
+    CODE_SIGN_STYLE: Manual
+    CODE_SIGN_IDENTITY: "-"
+    DEVELOPMENT_TEAM: ""
+
+targets:
+  Pulse:
+    type: application
+    platform: macOS
+    sources:
+      - path: Pulse
+    dependencies:
+      - target: PulseCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.pulse.app
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Pulse
+        INFOPLIST_KEY_LSUIElement: YES # Menu-bar only: no Dock icon.
+        ENABLE_HARDENED_RUNTIME: YES
+        ENABLE_APP_SANDBOX: NO
+
+  PulseCore:
+    type: framework
+    platform: macOS
+    sources:
+      - path: PulseCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.pulse.core
+        GENERATE_INFOPLIST_FILE: YES
+        DEFINES_MODULE: YES
+
+  PulseCoreTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: PulseCoreTests
+    dependencies:
+      - target: PulseCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.pulse.core.tests
+        GENERATE_INFOPLIST_FILE: YES
+
+schemes:
+  Pulse:
+    build:
+      targets:
+        Pulse: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - PulseCoreTests
+  PulseCoreTests:
+    build:
+      targets:
+        PulseCoreTests: [test]
+    test:
+      config: Debug
+      targets:
+        - PulseCoreTests
