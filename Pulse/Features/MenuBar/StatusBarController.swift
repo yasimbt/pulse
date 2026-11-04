@@ -56,6 +56,10 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
 
     func update(with settings: PulseSettings) {
         guard let snapshot = model.snapshot else { return }
+        // One transaction for all items. Separate commits were the largest cost of a tick.
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        defer { CATransaction.commit() }
         for entry in entries {
             let configs = entry.kinds.compactMap { kind in settings.modules.first { $0.kind == kind } }
             let parts = configs.compactMap { config -> (StatusSegment, ModuleReading)? in
@@ -90,8 +94,6 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
 
         // Updating a sublayer costs about 1.3 ms. Setting `button.image` costs about 16 ms, because
         // AppKit snapshots the item for MenuBarAgent. See docs/m1-findings.md.
-        CATransaction.begin()
-        CATransaction.setDisableActions(true)
         entry.contentLayer.contents = image
         entry.contentLayer.frame = CGRect(
             x: Self.itemPadding / 2,
@@ -99,7 +101,6 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
             width: image.size.width,
             height: image.size.height
         )
-        CATransaction.commit()
         button.setAccessibilityLabel(parts.map(\.1.accessibilityValue).joined(separator: ", "))
     }
 

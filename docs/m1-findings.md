@@ -66,14 +66,19 @@ recheck it on each new macOS release.
 A layer isn't recoloured the way a template image is, so Pulse draws using the button's
 `effectiveAppearance` and redraws when that changes.
 
-### Full app, Release build, 1 s rate, panels and Settings closed
+### Full app, Release build, 1 s rate
+Measured from outside with `ps`, with panels and Settings closed unless noted. Runs with a Pulse
+window open, or where the Mac slept, are excluded. A 0.135% reading was caused by sleep.
+
 | Configuration | CPU | Footprint |
 |---|---|---|
 | Button images, one wide combined item | about 2.5% | 23 MB |
-| Layer, 5 sparklines, separate items | 0.45-0.49% over 105 s (2 runs) | 28 MB |
-| Layer, 5 text items, separate | about 0.50% over a nominal 60 s (overstated) | 28 MB |
-| Layer, 5 sparklines, combined | about 0.32% over a nominal 60 s (overstated) | 22 MB |
+| Layer, 5 sparklines, one transaction per item | 0.448%, 0.486%, 0.552% | 27-28 MB |
+| Layer, 5 sparklines, one transaction per tick (current) | 0.415%, 0.434%, 0.439%, 0.467% | 27 MB |
+| A panel open for the whole run (not a clean measurement) | about 5.8% | 90-106 MB |
 
-- Capping redraws at 3 items per tick made no measurable difference (0.47-0.51%), so there is no cap.
-- Single runs of the same binary vary, and the pass margin is thin. Compare several runs.
-- Measurements must exclude open panels and Settings, which cost far more than the closed state.
+- Grouping updates into one `CATransaction` and removing `String(format:)` from per-sample formatting
+  gave the current margin. Collectors take about 0.5 ms per second.
+- Capping redraws at 3 items per tick made no measurable difference, so there is no cap.
+- Single runs of the same binary vary, so compare several runs.
+- RSS stays at about 85-88 MB even with the panels closed, because it counts shared system libraries.

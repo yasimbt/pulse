@@ -29,8 +29,7 @@ public enum MetricFormat {
             value /= 1000
             index += 1
         }
-        let digits = index == 0 || value >= 10 ? 0 : 1
-        return String(format: "%.\(digits)f%@", value, units[index])
+        return fixed(value, digits: index == 0 || value >= 10 ? 0 : 1) + units[index]
     }
 
     /// One core is 100%, matching Activity Monitor's process list.
@@ -51,7 +50,13 @@ public enum MetricFormat {
             scaled /= base
             index += 1
         }
-        let digits = index == 0 ? 0 : (scaled >= 100 ? 0 : 1)
-        return String(format: "%.\(digits)f %@", scaled, units[index])
+        return fixed(scaled, digits: index == 0 || scaled >= 100 ? 0 : 1) + " " + units[index]
+    }
+
+    /// Replaces `String(format:)`, which was a measurable cost when run for every module each sample.
+    private static func fixed(_ value: Double, digits: Int) -> String {
+        guard digits > 0 else { return String(Int(value.rounded())) }
+        let tenths = Int((value * 10).rounded())
+        return "\(tenths / 10).\(tenths % 10)"
     }
 }
