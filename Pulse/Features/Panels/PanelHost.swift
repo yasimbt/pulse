@@ -19,11 +19,7 @@ struct PanelHost: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             if kinds.count > 1 {
-                Picker("Module", selection: Binding(get: { current }, set: { selection = $0 })) {
-                    ForEach(kinds) { Text($0.title).tag(Optional($0)) }
-                }
-                .pickerStyle(.segmented)
-                .labelsHidden()
+                ModuleTabs(kinds: kinds, selected: current) { selection = $0 }
             }
             if let current {
                 ModulePanel(kind: current, model: model)
@@ -39,5 +35,33 @@ struct PanelHost: View {
         }
         .padding(14)
         .frame(width: 360)
+    }
+}
+
+/// Equal-width tabs that always fit the panel. A system segmented control sizes itself to its
+/// titles, and five of them left almost no margin, so tabs could be clipped at the panel's edges.
+struct ModuleTabs: View {
+    let kinds: [ModuleKind]
+    let selected: ModuleKind?
+    let select: (ModuleKind) -> Void
+
+    var body: some View {
+        HStack(spacing: 2) {
+            ForEach(kinds) { kind in
+                let isSelected = kind == selected
+                Button { select(kind) } label: {
+                    Text(kind.title)
+                        .font(.callout.weight(isSelected ? .semibold : .regular))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 4)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .background(isSelected ? Color.accentColor.opacity(0.2) : .clear, in: RoundedRectangle(cornerRadius: 5))
+                .accessibilityAddTraits(isSelected ? .isSelected : [])
+            }
+        }
     }
 }
