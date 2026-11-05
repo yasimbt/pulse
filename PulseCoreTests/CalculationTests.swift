@@ -158,7 +158,8 @@ private func process(_ pid: Int32, cpu: UInt64, footprint: UInt64 = 0, read: UIn
     #expect(MetricFormat.compactRate(1_234_000) == "1.2M")
     #expect(MetricFormat.compactRate(999_600) == "1.0M", "does not read 1000K")
     #expect(MetricFormat.compactRate(12) == "12B")
-    #expect(MetricFormat.cores(1.25) == "125.0%")
+    #expect(MetricFormat.cores(1.25) == "125.00%")
+    #expect(MetricFormat.precisePercent(0.1234) == "12.34%")
     #expect(MetricFormat.duration(1500) == "25m")
     #expect(MetricFormat.duration(7500) == "2h 05m")
 }
@@ -177,4 +178,31 @@ private func process(_ pid: Int32, cpu: UInt64, footprint: UInt64 = 0, read: UIn
 
 @Test func missingSampleHidesReading() {
     #expect(ModuleReading.make(.battery, snapshot: Snapshot(timestamp: Date()), recentPeak: 0) == nil)
+}
+
+// MARK: - Chart downsampling
+
+private func timed(_ values: [Double]) -> [TimedValue] {
+    values.enumerated().map { TimedValue(time: Date(timeIntervalSince1970: Double($0.offset)), value: $0.element) }
+}
+
+@Test func downsamplingKeepsShortSpikes() {
+    var values = Array(repeating: 0.1, count: 600)
+    values[333] = 0.9
+    let reduced = MetricHistory.downsampled(timed(values), maxCount: 120)
+    #expect(reduced.count == 120)
+    #expect(reduced.map(\.value).max() == 0.9)
+    #expect(reduced.map(\.time) == reduced.map(\.time).sorted())
+}
+
+@Test func downsamplingLeavesShortSeriesAlone() {
+    let points = timed([1, 2, 3])
+    #expect(MetricHistory.downsampled(points, maxCount: 120) == points)
+    #expect(MetricHistory.downsampled([], maxCount: 120).isEmpty)
+}
+
+@Test func downsamplingCoversEveryPointWithUnevenBuckets() {
+    let reduced = MetricHistory.downsampled(timed((0..<1199).map(Double.init)), maxCount: 120)
+    #expect(reduced.count == 120)
+    #expect(reduced.last?.value == 1198)
 }

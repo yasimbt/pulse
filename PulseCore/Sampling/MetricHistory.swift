@@ -44,6 +44,17 @@ public struct MetricHistory: Sendable {
         return (series[id]?.elements ?? []).filter { $0.time >= cutoff }
     }
 
+    /// Reduces points to at most `maxCount`, keeping each bucket's highest value so that a short
+    /// spike stays visible on the chart.
+    public static func downsampled(_ points: [TimedValue], maxCount: Int) -> [TimedValue] {
+        guard maxCount > 0, points.count > maxCount else { return points }
+        let bucketSize = Double(points.count) / Double(maxCount)
+        return (0..<maxCount).compactMap { bucket in
+            let range = Int(Double(bucket) * bucketSize)..<Int(Double(bucket + 1) * bucketSize)
+            return points[range].max { $0.value < $1.value }
+        }
+    }
+
     /// The newest `count` raw values, oldest first. Cheap enough to call every sample.
     public func recentValues(_ id: SeriesID, count: Int) -> [Double] {
         (series[id]?.suffix(count) ?? []).map(\.value)

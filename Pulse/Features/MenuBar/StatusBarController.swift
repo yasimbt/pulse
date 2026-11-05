@@ -87,7 +87,8 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
         let image = StatusItemRenderer.image(
             for: segments,
             scale: button.window?.backingScaleFactor ?? 2,
-            appearance: appearance
+            appearance: appearance,
+            compact: entry.kinds.count > 1
         )
         let length = image.size.width + Self.itemPadding
         if entry.item.length != length { entry.item.length = length }

@@ -6,6 +6,11 @@ public enum MetricFormat {
         "\(Int((fraction * 100).rounded()))%"
     }
 
+    /// Two decimals, matching Activity Monitor's CPU figures. For panels, not the menu bar.
+    public static func precisePercent(_ fraction: Double) -> String {
+        String(format: "%.2f%%", fraction * 100)
+    }
+
     /// 1000-based, matching Finder and Activity Monitor's disk and network columns.
     public static func bytes(_ value: Double) -> String {
         scaled(value, base: 1000)
@@ -34,7 +39,7 @@ public enum MetricFormat {
 
     /// One core is 100%, matching Activity Monitor's process list.
     public static func cores(_ value: Double) -> String {
-        String(format: "%.1f%%", value * 100)
+        String(format: "%.2f%%", value * 100)
     }
 
     public static func duration(_ seconds: Double) -> String {

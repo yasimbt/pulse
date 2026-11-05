@@ -77,11 +77,11 @@ struct CPUDetails: View {
     var body: some View {
         if let sample {
             VStack(alignment: .leading, spacing: 4) {
-                MetricRow("Total", MetricFormat.percent(sample.total))
-                MetricRow("User", MetricFormat.percent(sample.user))
-                MetricRow("System", MetricFormat.percent(sample.system))
+                MetricRow("Total", MetricFormat.precisePercent(sample.total))
+                MetricRow("User", MetricFormat.precisePercent(sample.user))
+                MetricRow("System", MetricFormat.precisePercent(sample.system))
                 ForEach(sample.clusters, id: \.name) { cluster in
-                    MetricRow("\(cluster.name) (\(cluster.coreCount) cores)", MetricFormat.percent(cluster.usage))
+                    MetricRow("\(cluster.name) (\(cluster.coreCount) cores)", MetricFormat.precisePercent(cluster.usage))
                 }
                 CoreBars(cores: sample.cores)
             }
@@ -107,7 +107,7 @@ struct CoreBars: View {
                 .background(.quaternary)
                 .accessibilityElement()
                 .accessibilityLabel("Core \(core.index), \(core.clusterName)")
-                .accessibilityValue(MetricFormat.percent(core.usage))
+                .accessibilityValue(MetricFormat.precisePercent(core.usage))
             }
         }
         .frame(height: 28)

@@ -12,11 +12,14 @@ struct HistoryChart: View {
     }
 
     private struct Point: Identifiable {
+        let id: Int
         let line: String
         let time: Date
         let value: Double
-        var id: String { "\(line)\(time.timeIntervalSince1970)" }
     }
+
+    /// The chart is about 330 pt wide, so more points add cost but no visible detail.
+    private static let maxPointsPerLine = 120
 
     let title: String
     let lines: [Line]
@@ -25,9 +28,7 @@ struct HistoryChart: View {
 
     var body: some View {
         let now = Date()
-        let points = lines.flatMap { line in
-            history.points(line.series, now: now).map { Point(line: line.name, time: $0.time, value: $0.value) }
-        }
+        let points = chartPoints(now: now)
         Chart(points) { point in
             LineMark(
                 x: .value("Time", point.time),
@@ -59,6 +60,17 @@ struct HistoryChart: View {
         .accessibilityElement()
         .accessibilityLabel("\(title), last 10 minutes")
         .accessibilityValue(summary(points))
+    }
+
+    private func chartPoints(now: Date) -> [Point] {
+        var points: [Point] = []
+        for line in lines {
+            let reduced = MetricHistory.downsampled(history.points(line.series, now: now), maxCount: Self.maxPointsPerLine)
+            for value in reduced {
+                points.append(Point(id: points.count, line: line.name, time: value.time, value: value.value))
+            }
+        }
+        return points
     }
 
     private func yDomain(_ points: [Point]) -> ClosedRange<Double> {

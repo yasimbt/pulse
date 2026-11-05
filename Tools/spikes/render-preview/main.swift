@@ -26,19 +26,28 @@ func run(_ out: String) async throws {
     }
     model.ingest(snap, enabled: ModuleKind.allCases)
 
-    // Menu-bar image: every renderer, all five modules.
+    // Menu-bar image: every renderer, all five modules, both layouts, in light and dark.
     for renderer in RendererKind.allCases {
-        let segments = ModuleKind.allCases.map { kind in
-            let reading = ModuleReading.make(kind, snapshot: snap, recentPeak: 0)
-            return StatusSegment(label: kind.shortLabel, renderer: renderer, tint: .blue, text: reading?.text ?? "-",
-                                 widthTemplate: kind == .network ? "↓999K ↑999K" : "100%",
-                                 fillSteps: 14, spark: Array(repeating: 7, count: 18))
+        for compact in [false, true] {
+            let segments = ModuleKind.allCases.map { kind in
+                let reading = ModuleReading.make(kind, snapshot: snap, recentPeak: 0)
+                return StatusSegment(label: kind.shortLabel, renderer: renderer, tint: .system, text: reading?.text ?? "-",
+                                     widthTemplate: kind == .network ? "↓999K ↑999K" : "100%",
+                                     fillSteps: 14, spark: (0..<18).map { 2 + ($0 * 3) % 12 })
+            }
+            for (name, appearanceName) in [("light", NSAppearance.Name.aqua), ("dark", .darkAqua)] {
+                let appearance = NSAppearance(named: appearanceName) ?? .currentDrawing()
+                let image = StatusItemRenderer.image(for: segments, scale: 4, appearance: appearance, compact: compact)
+                if name == "light" { print("menu \(renderer.rawValue) compact=\(compact): \(image.size.width) pt") }
+                let holder = NSView(frame: NSRect(x: 0, y: 0, width: image.size.width + 8, height: 26))
+                holder.wantsLayer = true
+                holder.layer?.backgroundColor = (name == "light" ? NSColor.white : NSColor.black).cgColor
+                let view = NSImageView(frame: NSRect(x: 4, y: 4, width: image.size.width, height: image.size.height))
+                view.image = image
+                holder.addSubview(view)
+                save(holder, "\(out)/menu-\(renderer.rawValue)-\(compact ? "compact" : "full")-\(name).png")
+            }
         }
-        let image = StatusItemRenderer.image(for: segments)
-        print("menu \(renderer.rawValue): \(image.size.width) pt")
-        let holder = NSImageView(frame: NSRect(origin: .zero, size: image.size))
-        holder.image = image
-        save(holder, "\(out)/menu-\(renderer.rawValue).png")
     }
 
     let actions = PanelActions(openSettings: {}, quit: {}, openActivityMonitor: {})
