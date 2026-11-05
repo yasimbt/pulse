@@ -12,6 +12,8 @@ struct PanelHost: View {
     let kinds: [ModuleKind]
     let model: LiveModel
     let actions: PanelActions
+    /// Lets the sampler run `nettop` only while the Network tab is showing.
+    var onTabChange: (ModuleKind) -> Void = { _ in }
     @State private var selection: ModuleKind?
 
     private var current: ModuleKind? { selection ?? kinds.first }
@@ -19,7 +21,10 @@ struct PanelHost: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             if kinds.count > 1 {
-                ModuleTabs(kinds: kinds, selected: current) { selection = $0 }
+                ModuleTabs(kinds: kinds, selected: current) {
+                    selection = $0
+                    onTabChange($0)
+                }
             }
             if let current {
                 ModulePanel(kind: current, model: model)

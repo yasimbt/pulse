@@ -30,11 +30,12 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
     private var entries: [Entry] = []
     private var layout: [[ModuleKind]] = []
     private let popover = NSPopover()
+    private var outsideClickMonitor: Any?
+    private var lastOutsideClose = ContinuousClock.Instant.now - .seconds(60)
 
     init(model: LiveModel) {
         self.model = model
         super.init()
-        // Closes when the user clicks elsewhere.
         popover.behavior = .transient
         popover.delegate = self
     }
@@ -148,18 +149,39 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
             popover.performClose(nil)
             return
         }
+        // A click on the icon may also reach the outside-click monitor. Don't reopen what it just closed.
+        guard ContinuousClock.now - lastOutsideClose > .milliseconds(300) else { return }
         guard layout.indices.contains(sender.tag) else { return }
         let kinds = layout[sender.tag]
-        let host = NSHostingController(rootView: PanelHost(kinds: kinds, model: model, actions: actions))
+        let rootView = PanelHost(kinds: kinds, model: model, actions: actions) { [weak self] kind in
+            self?.onPanelChange?([kind])
+        }
+        let host = NSHostingController(rootView: rootView)
         host.sizingOptions = .preferredContentSize
         popover.contentViewController = host
-        onPanelChange?(Set(kinds))
+        onPanelChange?(Set(kinds.prefix(1)))
         NSApp.activate()
         popover.show(relativeTo: sender.bounds, of: sender, preferredEdge: .minY)
+        watchForOutsideClicks()
+    }
+
+    /// A transient popover only closes itself while this app is active, and macOS doesn't always
+    /// activate a menu-bar app. A global monitor sees clicks in other apps. Mouse clicks don't
+    /// need the Accessibility permission, and the event contents aren't used.
+    private func watchForOutsideClicks() {
+        outsideClickMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self, self.popover.isShown else { return }
+                self.lastOutsideClose = .now
+                self.popover.performClose(nil)
+            }
+        }
     }
 
     /// Releases the SwiftUI views so that a closed panel costs no CPU.
     func popoverDidClose(_ notification: Notification) {
+        if let outsideClickMonitor { NSEvent.removeMonitor(outsideClickMonitor) }
+        outsideClickMonitor = nil
         popover.contentViewController = nil
         onPanelChange?(nil)
     }

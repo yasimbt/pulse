@@ -58,7 +58,7 @@ final class AppController: NSObject, NSWindowDelegate {
         Task { await sampler.setInterval(settings.sampleInterval) }
     }
 
-    /// Process scans and `nettop` run only while a panel that shows them is open.
+    /// Process scans run only while a panel is open, and `nettop` only while Network is showing.
     private func updateDemand() {
         let demand = Sampler.Demand(
             modules: Set(store.settings.enabledModules.map(\.kind)),
