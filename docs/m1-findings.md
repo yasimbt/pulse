@@ -74,7 +74,10 @@ window open, or where the Mac slept, are excluded. A 0.135% reading was caused b
 |---|---|---|
 | Button images, one wide combined item | about 2.5% | 23 MB |
 | Layer, 5 sparklines, one transaction per item | 0.448%, 0.486%, 0.552% | 27-28 MB |
-| Layer, 5 sparklines, one transaction per tick (current) | 0.415%, 0.434%, 0.439%, 0.467% | 27 MB |
+| Layer, 5 sparklines, one transaction per tick | 0.415%, 0.434%, 0.439%, 0.467% | 27 MB |
+| Same, 5 items combined, compact layout | 0.524%, 0.547%, 0.540%, fresh start 0.547-0.571% | 22-24 MB |
+| Combined, with cached text measurements, `CGImage` contents and 60 s free space (current) | 0.375% over 317 s | 23 MB |
+| 5 sparklines, same changes (current) | 0.395% over 190 s | 33 MB |
 | A panel open for the whole run (not a clean measurement) | about 5.8% | 90-106 MB |
 
 - Grouping updates into one `CATransaction` and removing `String(format:)` from per-sample formatting
@@ -82,3 +85,9 @@ window open, or where the Mac slept, are excluded. A 0.135% reading was caused b
 - Capping redraws at 3 items per tick made no measurable difference, so there is no cap.
 - Single runs of the same binary vary, so compare several runs.
 - RSS stays at about 85-88 MB even with the panels closed, because it counts shared system libraries.
+
+The combined item originally missed the target, which the sparkline runs had labelled the worst
+case. It redraws almost every tick because network digits change, and a profile showed measuring
+text as about half of that drawing. Free-space reads were the largest collector cost, because they
+ask the system to total its purgeable caches. A fresh start measured the same as six hours of
+uptime, so this was the cost of the configuration and not drift.

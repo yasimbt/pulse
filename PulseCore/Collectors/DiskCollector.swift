@@ -3,7 +3,8 @@ import IOKit
 
 public actor DiskCollector: Collector {
     public nonisolated let id = MetricID.disk
-    private static let spaceRefreshInterval: Duration = .seconds(30)
+    /// Reading free space asks the system to total its purgeable caches, which costs over 10 ms.
+    private static let spaceRefreshInterval: Duration = .seconds(60)
 
     private let clock = ContinuousClock()
     private var previous: (read: UInt64, write: UInt64, time: ContinuousClock.Instant)?

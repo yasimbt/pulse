@@ -38,6 +38,7 @@ extension ModuleTint {
 ///
 /// Compact layout stacks each label above its value. The combined item needs it, because at
 /// full width it did not fit beside the notch on a built-in display.
+@MainActor
 enum StatusItemRenderer {
     private static let height: CGFloat = 18
     private static let labelGap: CGFloat = 3
@@ -97,14 +98,44 @@ enum StatusItemRenderer {
         return [.font: font, .foregroundColor: color]
     }
 
-    private static func textWidth(_ text: String, _ attributes: [NSAttributedString.Key: Any]) -> CGFloat {
-        ceil((text as NSString).size(withAttributes: attributes).width)
+    private struct TextKey: Hashable {
+        let text: String
+        let size: CGFloat
+        let weight: NSFont.Weight
+        let digits: Bool
     }
 
-    private static func draw(_ text: String, originX: CGFloat, centerY: CGFloat, _ attributes: [NSAttributedString.Key: Any]) {
+    /// Stays small, because only labels and width templates are measured, never live values.
+    private static var widthCache: [TextKey: CGFloat] = [:]
+
+    /// Remembered, because measuring text was half the cost of drawing the combined item.
+    private static func textWidth(_ text: String, size: CGFloat, weight: NSFont.Weight, digits: Bool = false) -> CGFloat {
+        let key = TextKey(text: text, size: size, weight: weight, digits: digits)
+        if let width = widthCache[key] { return width }
+        let width = ceil((text as NSString).size(withAttributes: attributes(size: size, weight: weight, digits: digits)).width)
+        widthCache[key] = width
+        return width
+    }
+
+    /// Line height depends on the font and not on the characters, so one measurement per font
+    /// is enough. Measured for every string shown here, including the network arrows.
+    private static var lineHeights: [TextKey: CGFloat] = [:]
+
+    private static func draw(
+        _ text: String,
+        originX: CGFloat,
+        centerY: CGFloat,
+        size: CGFloat,
+        weight: NSFont.Weight,
+        digits: Bool = false,
+        color: NSColor = .labelColor
+    ) {
         let nsText = text as NSString
-        let size = nsText.size(withAttributes: attributes)
-        nsText.draw(at: NSPoint(x: originX, y: centerY - size.height / 2), withAttributes: attributes)
+        let textAttributes = attributes(size: size, weight: weight, digits: digits, color: color)
+        let key = TextKey(text: "", size: size, weight: weight, digits: digits)
+        let lineHeight = lineHeights[key] ?? nsText.size(withAttributes: textAttributes).height
+        lineHeights[key] = lineHeight
+        nsText.draw(at: NSPoint(x: originX, y: centerY - lineHeight / 2), withAttributes: textAttributes)
     }
 
     // MARK: - Full layout: label beside value
@@ -112,22 +143,21 @@ enum StatusItemRenderer {
     private static func fullWidth(_ segment: StatusSegment) -> CGFloat {
         let graphic: CGFloat
         switch segment.renderer {
-        case .text: graphic = textWidth(segment.widthTemplate, attributes(size: 11, weight: .medium, digits: true))
+        case .text: graphic = textWidth(segment.widthTemplate, size: 11, weight: .medium, digits: true)
         case .sparkline: graphic = 36
         case .bar: graphic = 28
         case .gauge: graphic = 14
         }
-        return textWidth(segment.label, attributes(size: 9, weight: .semibold)) + labelGap + graphic
+        return textWidth(segment.label, size: 9, weight: .semibold) + labelGap + graphic
     }
 
     private static func drawFull(_ segment: StatusSegment, at originX: CGFloat) {
-        let labelAttributes = attributes(size: 9, weight: .semibold)
-        draw(segment.label, originX: originX, centerY: height / 2, labelAttributes)
-        let graphicX = originX + textWidth(segment.label, labelAttributes) + labelGap
+        draw(segment.label, originX: originX, centerY: height / 2, size: 9, weight: .semibold)
+        let graphicX = originX + textWidth(segment.label, size: 9, weight: .semibold) + labelGap
         let color = segment.tint.color ?? NSColor.labelColor
         switch segment.renderer {
         case .text:
-            draw(segment.text, originX: graphicX, centerY: height / 2, attributes(size: 11, weight: .medium, digits: true, color: color))
+            draw(segment.text, originX: graphicX, centerY: height / 2, size: 11, weight: .medium, digits: true, color: color)
         case .sparkline:
             drawSparkline(segment, in: NSRect(x: graphicX, y: 2, width: 36, height: 14), color: color)
         case .bar:
@@ -146,32 +176,30 @@ enum StatusItemRenderer {
 
     private static func compactWidth(_ segment: StatusSegment) -> CGFloat {
         if segment.renderer == .text, let lines = twoLines(segment.widthTemplate) {
-            let lineAttributes = attributes(size: 8.5, weight: .medium, digits: true)
-            return lines.map { textWidth($0, lineAttributes) }.max() ?? 0
+            return lines.map { textWidth($0, size: 8.5, weight: .medium, digits: true) }.max() ?? 0
         }
         let graphic: CGFloat
         switch segment.renderer {
-        case .text: graphic = textWidth(segment.widthTemplate, attributes(size: 10, weight: .medium, digits: true))
+        case .text: graphic = textWidth(segment.widthTemplate, size: 10, weight: .medium, digits: true)
         case .sparkline, .bar: graphic = 24
         case .gauge: graphic = 10
         }
-        return max(textWidth(segment.label, attributes(size: 7.5, weight: .semibold)), graphic)
+        return max(textWidth(segment.label, size: 7.5, weight: .semibold), graphic)
     }
 
     private static func drawCompact(_ segment: StatusSegment, at originX: CGFloat, width: CGFloat) {
         let color = segment.tint.color ?? NSColor.labelColor
         // The arrows already identify network, so its two lines replace the label.
         if segment.renderer == .text, twoLines(segment.widthTemplate) != nil, let lines = twoLines(segment.text) {
-            let lineAttributes = attributes(size: 8.5, weight: .medium, digits: true, color: color)
-            draw(lines[0], originX: originX, centerY: height * 0.75, lineAttributes)
-            draw(lines[1], originX: originX, centerY: height * 0.25, lineAttributes)
+            draw(lines[0], originX: originX, centerY: height * 0.75, size: 8.5, weight: .medium, digits: true, color: color)
+            draw(lines[1], originX: originX, centerY: height * 0.25, size: 8.5, weight: .medium, digits: true, color: color)
             return
         }
-        draw(segment.label, originX: originX, centerY: height - 4, attributes(size: 7.5, weight: .semibold))
+        draw(segment.label, originX: originX, centerY: height - 4, size: 7.5, weight: .semibold)
         let graphic = NSRect(x: originX, y: 0, width: width, height: compactGraphicHeight)
         switch segment.renderer {
         case .text:
-            draw(segment.text, originX: originX, centerY: graphic.midY, attributes(size: 10, weight: .medium, digits: true, color: color))
+            draw(segment.text, originX: originX, centerY: graphic.midY, size: 10, weight: .medium, digits: true, color: color)
         case .sparkline:
             drawSparkline(segment, in: graphic.insetBy(dx: 0, dy: 0.5), color: color)
         case .bar:

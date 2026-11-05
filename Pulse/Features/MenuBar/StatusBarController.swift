@@ -96,7 +96,8 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
 
         // Updating a sublayer costs about 1.3 ms. Setting `button.image` costs about 16 ms, because
         // AppKit snapshots the item for MenuBarAgent. See docs/m1-findings.md.
-        entry.contentLayer.contents = image
+        // A CGImage, since Core Animation would otherwise convert an NSImage on every update.
+        entry.contentLayer.contents = image.cgImage(forProposedRect: nil, context: nil, hints: nil)
         entry.contentLayer.frame = CGRect(
             x: Self.itemPadding / 2,
             y: (button.bounds.height - image.size.height) / 2,
