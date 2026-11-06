@@ -91,3 +91,16 @@ case. It redraws almost every tick because network digits change, and a profile 
 text as about half of that drawing. Free-space reads were the largest collector cost, because they
 ask the system to total its purgeable caches. A fresh start measured the same as six hours of
 uptime, so this was the cost of the configuration and not drift.
+
+### Panel open/close cycles (Release, combined item)
+Footprint 4 s after each close: 42, 96, 105, 46 MB (one close missed), then 41 MB about 20 s
+after the last close, from 23 MB before the first open. Open readings were 42-134 MB and did not
+climb with each cycle, so this is memory released lazily rather than a leak. About 18 MB stays
+loaded after the first open.
+
+## M1 acceptance
+- CPU within ±3% of Activity Monitor: matched `top` within 1.5 points at idle, 3 and 10 busy loops.
+  The developer did not separately report a comparison with Activity Monitor.
+- < 0.5% CPU at 1 s with 5 modules: 0.375% combined, 0.395% as five sparklines (Release, closed).
+- < 60 MB footprint: 23-41 MB with panels closed.
+- Accepted by the developer on 2026-11-06.

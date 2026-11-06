@@ -190,7 +190,7 @@ Weather, clocks/calendars, RAM "cleaning", disk cleanup, app uninstalling, ads, 
 ---
 
 ## 6. Non-functional requirements
-- **Performance:** < 0.5% average CPU and < 60 MB physical footprint (`phys_footprint`, close to what Activity Monitor shows; not RSS, which counts shared system libraries) with M1 features at a 1 s rate. Collectors run off the main thread, and the UI redraws at most once per sample.
+- **Performance:** < 0.5% average CPU and < 60 MB physical footprint (`phys_footprint`, close to what Activity Monitor shows; not RSS, which counts shared system libraries) with M1 features at a 1 s rate and panels closed. An open panel may use more (about 90-135 MB with charts), provided the footprint falls back after it closes. Collectors run off the main thread, and the UI redraws at most once per sample.
 - **Energy:** Pulse must not appear in the "Using Significant Energy" list.
 - **Reliability:** a collector failure is never fatal. Errors are logged via `os.Logger` (subsystem `com.<you>.pulse`).
 - **Privacy:** no network access except the opt-in LAN/localhost features.
