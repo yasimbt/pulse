@@ -32,6 +32,27 @@ under 0.5% CPU and about 25-40 MB of memory with the panel closed.
   ```
   If they aren't installed but [Nix](https://nixos.org) is, the Makefile runs them through Nix.
 
+## Install (test build)
+
+Pulse is not yet signed with an Apple Developer ID, so macOS warns that it can't check the app
+for malware. These steps tell macOS you trust it. You only need them once.
+
+1. Download `Pulse-0.1.0-arm64.zip` from the
+   [Releases page](https://github.com/yasimbt/pulse/releases).
+2. Double-click the zip to unzip it, then drag **Pulse** into your **Applications** folder.
+3. Open Pulse from Applications. macOS says it can't verify Pulse: click **Done**.
+4. Open **System Settings → Privacy & Security** and scroll down to **Security**. Next to the
+   message that Pulse was blocked, click **Open Anyway**, enter your password, then click
+   **Open Anyway** again.
+
+Pulse appears in the menu bar at the top right of the screen; it has no Dock icon. If you can't see
+it, check **System Settings → Menu Bar** and make sure Pulse is allowed. On a MacBook with a notch,
+too many menu-bar items can push it out of sight.
+
+To uninstall, quit Pulse (click it, then **Quit**) and drag it from Applications to the Bin.
+
+A normal installer that opens without these steps is planned for a later version.
+
 ## Build and run
 
 ```bash
@@ -67,7 +88,7 @@ xcodebuild -scheme Pulse -configuration Release -destination 'platform=macOS,arc
   -derivedDataPath build/ ENABLE_HARDENED_RUNTIME=NO build
 ```
 
-Details are in [`docs/signing.md`](docs/signing.md). There are no downloadable builds yet.
+Details are in [`docs/signing.md`](docs/signing.md). Test builds are attached to [GitHub Releases](https://github.com/yasimbt/pulse/releases).
 
 ## Project layout
 

@@ -183,6 +183,7 @@ Pulse/
 - Multi-Mac: Bonjour discovery so one Mac can view another Pulse instance on the LAN.
 - Full VoiceOver pass: every chart has an `accessibilityLabel` summary and the audio graphs API (`AXChartDescriptor`).
 - Onboarding: explain the macOS 26 System Settings → Menu Bar permission and help users enable it.
+- Distribution for non-technical users: sign with a Developer ID certificate (Apple Developer Program, $99/yr), notarize each build with `notarytool`, staple the ticket, and ship a drag-to-Applications `.dmg` on GitHub Releases. The app must then open with no Gatekeeper warning. Re-enable the hardened runtime for Release, since notarization requires it and a shared Team ID should fix the ad-hoc crash in `docs/signing.md`. Consider Sparkle for updates.
 
 ### Explicitly out of scope
 Weather, clocks/calendars, RAM "cleaning", disk cleanup, app uninstalling, ads, telemetry/analytics. The app sends **no data off the machine**.
