@@ -101,30 +101,3 @@ Details are in [`docs/signing.md`](docs/signing.md). Test builds are attached to
 | `docs/` | Findings and measurements from each milestone |
 | `SPEC.md` | The product spec and milestone plan |
 | `CLAUDE.md` | Instructions for Claude Code, which is used to develop Pulse |
-
-## Contributing
-
-Commit messages follow [Conventional Commits](https://www.conventionalcommits.org):
-
-```
-<type>(<optional scope>): <summary in the imperative, lower case>
-```
-
-| Type | Use for |
-|---|---|
-| `feat` | A new feature |
-| `fix` | A bug fix |
-| `perf` | A performance improvement |
-| `refactor` | A code change that neither fixes a bug nor adds a feature |
-| `test` | Adding or changing tests |
-| `docs` | Documentation only |
-| `build` | The build system, `project.yml` or the Makefile |
-| `chore` | Anything else, such as spikes or tooling |
-
-For example: `feat(power): add GPU watts to the Power panel`. Commits made before v0.1.0 use
-plain sentences.
-
-Before sending a change, run `make test` and `make lint`.
-
-Releases are tagged `vMAJOR.MINOR.PATCH`. Each milestone in `SPEC.md` gets a minor version:
-M1 is v0.1.0, M2 will be v0.2.0, and so on.
