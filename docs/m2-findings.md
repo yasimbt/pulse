@@ -20,3 +20,16 @@ Spike: `Tools/spikes/ioreport`. IOReport is a private library loaded with `dlope
   `PCPU`, per-core, `ANE`, `DRAM`, all in mJ), but their raw values did not change at all over
   30 s with 4 busy loops. Only GPU Energy and the PCIe channels move. No other IOReport group
   reports CPU energy or power.
+
+## When the CPU energy counters update (10-minute watch, non-root)
+`ior watch 600` read the counters once a second. The Mac slept during the run, so only the sample
+index is meaningful, not the timestamps.
+- Samples 0-250: one change, at sample 185.
+- Samples 251-350: a change every 1-6 samples, about 0.3-1.1 W of CPU, which is plausible.
+- Samples 351-599: one change, at sample 519.
+- An earlier 30 s run with 4 busy loops saw no change at all, so CPU load alone does not trigger
+  updates.
+
+The counters work but update only some of the time. A likely cause is that the driver refreshes
+them only while another client, such as `powermetrics` running as root, is sampling. Not yet
+confirmed.
