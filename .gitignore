@@ -11,3 +11,15 @@ xcuserdata/
 *.xcuserstate
 
 .DS_Store
+
+# Personal tool and agent settings
+ai.toml
+CLAUDE.local.md
+.claude/settings.local.json
+
+# Editors and Swift tooling
+.swiftpm/
+.vscode/
+.idea/
+*.swp
+*~

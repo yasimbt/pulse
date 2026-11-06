@@ -2,65 +2,6 @@
 
 You are building **Pulse**, a native macOS menu-bar system monitor for Apple Silicon. The full product spec is in `SPEC.md`; read it before doing anything.
 
-## Memory
-
-Your memory:
-- The tool is `ai memory`
-- Your memories are in `~/.ai/memory`
-
-This memory outlives every session, compaction, model and vendor change.
-Without it you do not know who you are, or what was decided and tried.
-
-### At startup: activating memory (mandatory)
-
-Run `ai view` before any other tool call, in every session, and
-then do exactly what it prints, to the end of its output.
-
-### While working: register memories (mandatory)
-
-Call `ai memory note "<1 line, max 280 bytes>"` whenever you learn
-something new, or something worth keeping happens. That covers a task
-worth real effort, a fact or insight the user teaches you, anything you
-learn about their life (even indirectly), any event of lasting effect.
-
-Write only what happened or what you learned: the tool records the time,
-machine, repo, branch, agent, model and session of every note, so never
-put a date, repo or session in it.
-
-Do not register redundant memories.
-
-Never edit or delete anything under `~/.ai/memory`: the tool manages it.
-
-### Reading it: the view, zoom, grep
-
-`ai view` prints the view: the whole memory in a fixed number of one-line
-summaries, oldest first, under UTC date headers (`2026-10-11`). A line
-is `id|text` for message id, or `id+n|text` for the n messages from id
-on; one that runs past its header's day shows its last day,
-`256+8|..10-12|text`. A short message is its own line, word for word;
-the older the messages, the more a line covers. Notes (what sessions
-like this one noted) are bare text; a chat with the user is tagged by
-speaker, `user:` and `ai:`. `ai memory view` prints it alone. A long view
-comes in parts: run the command each part ends with until it says you
-are awake.
-
-`ai memory zoom <id+n>` opens a line two levels down: the four lines of n/4
-it was made from, or its messages when n is 2 or 4; `ai memory zoom <id>`
-gives message id in full. Zoom whenever a line
-only mentions something you need, before you act, guess or ask.
-`ai memory grep <regex>` searches every message, word for word; `-t` adds
-the summaries, `--help` lists the filters. `ai memory view`, `zoom` and `grep`
-take `--time` for the time of day and `-o repo,branch,...` for more
-fields. `ai memory show <id>` prints where a message or summary came
-from.
-
-### If you're a subagent: skip everything above
-
-Parallel sessions on this machine are all you, and may all write memories.
-A subagent is not: it must never run `ai memory`, because it cannot judge what
-is already known, and its notes would arrive duplicated and incorrectly.
-When you spawn one, write: `You are a subagent. Don't run ai memory.`
-
 ## About the developer
 - Experienced hardware/embedded engineer (Rust, C, PCB design) who is **new to macOS/Swift/Xcode**.
 - When you introduce an Apple-specific concept (signing, entitlements, IOKit, SwiftUI scenes, `@Observable`), explain it in one or two plain sentences in your reply.
@@ -72,12 +13,13 @@ When you spawn one, write: `You are a subagent. Don't run ai memory.`
 3. For any private or undocumented API (IOReport, IOHIDEventSystemClient, SMC, IORegistry port data), **write a spike first** in `Tools/spikes/<name>/` (a small Swift command-line executable) that prints raw values. Show the output, then build the collector.
 4. Keep `PulseCore` free of SwiftUI/AppKit imports.
 5. Add unit tests for every parser and calculation, using recorded fixtures.
-6. Commit after each working step with a clear message. Don't commit build products.
+6. Commit after each working step. Use Conventional Commits (`feat:`, `fix:`, `perf:`, `refactor:`, `test:`, `docs:`, `build:`, `chore:`, with an optional scope such as `feat(power):`); see README.md. Don't commit build products.
 7. If something can't be done (an API isn't exposed on this chip), document it in `docs/` and hide the feature rather than faking data.
+8. Tag each accepted milestone: M1 is `v0.1.0`, M2 is `v0.2.0`, and so on.
 
 ## Commands
 ```bash
-brew install xcodegen swiftlint     # one-time
+brew install xcodegen swiftlint     # one-time (the Makefile falls back to Nix if missing)
 xcodegen generate                   # regenerate project after editing project.yml
 make build                          # xcodebuild -scheme Pulse -configuration Debug build
 make test                           # xcodebuild test -scheme PulseCoreTests
