@@ -21,7 +21,7 @@ struct ModulePanel: View {
         case .disk: DiskDetails(sample: model.snapshot?.disk)
         case .network: NetworkDetails(sample: model.snapshot?.network)
         case .battery: BatteryDetails(sample: model.snapshot?.battery)
-        case .power: PowerDetails(sample: model.snapshot?.power, energyJoules: model.energyJoules)
+        case .power: PowerDetails(sample: model.snapshot?.power, thermal: model.snapshot?.thermal, energyJoules: model.energyJoules)
         }
     }
 

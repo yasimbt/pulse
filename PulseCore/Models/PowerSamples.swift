@@ -66,3 +66,28 @@ public struct PowerSample: Sendable, Equatable {
         clusters.first { $0.kind == kind }
     }
 }
+
+public struct TemperatureReading: Sendable, Equatable, Identifiable {
+    public let id: String
+    public let title: String
+    public let celsius: Double
+
+    public init(id: String, title: String, celsius: Double) {
+        self.id = id
+        self.title = title
+        self.celsius = celsius
+    }
+}
+
+public struct ThermalSample: Sendable, Equatable {
+    /// In the sensor map's order.
+    public let readings: [TemperatureReading]
+
+    public init(readings: [TemperatureReading]) {
+        self.readings = readings
+    }
+
+    public func reading(_ id: String) -> TemperatureReading? {
+        readings.first { $0.id == id }
+    }
+}

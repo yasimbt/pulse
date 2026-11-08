@@ -129,6 +129,7 @@ public struct Snapshot: Sendable, Equatable {
     public var networkProcesses: [NetworkProcessUsage]?
     public var selfUsage: SelfUsage?
     public var power: PowerSample?
+    public var thermal: ThermalSample?
 
     public init(timestamp: Date) {
         self.timestamp = timestamp

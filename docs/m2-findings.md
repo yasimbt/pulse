@@ -121,3 +121,25 @@ cluster split, but cost far more.
 Power adds about 0.08% when read every 2 s, which puts the combined item right at the 0.5% target.
 Each read averages the whole interval, so the slower refresh misses no energy. The panel still
 reads every second, with the cluster split and frequencies. Footprint stays at 23 MB closed.
+
+## Temperatures (`Tools/spikes/hid-temps`)
+IOHIDEventSystemClient, matched on usage page 0xff00 and usage 5, lists 47 sensors on the M5 with no
+root. Reading all of them costs about 1.4 ms of CPU. Sensor names don't say what they measure, so
+they were identified by load (idle, then 25 s of 4 and of 10 busy loops):
+
+| Sensors | Idle | 4 loops | Reading |
+|---|---|---|---|
+| PMU tdie1-14 | 37-40 °C | 57-76 °C | Chip die. tdie1, 6 and 8 heat most, probably beside the P cores. |
+| PMU2 tdie1-10 | 34-35 °C | 43-45 °C | Even +10 °C rise: probably a second power chip, not the die. Not shown. |
+| NAND CH0 | 34 °C | 40 °C | SSD |
+| gas gauge battery (6) | 27-28 °C | | Battery. AppleSmartBattery has no temperature on the M5, so this fills the gap. |
+| PMU tdev1-8 | | | Board sensors. tdev1 reads -22 °C and is faulty. Not shown. |
+| PMU tcal | 51.82 °C | 51.82 °C | Constant, probably calibration. Not shown. |
+
+At 10 loops the die ran cooler than at 4 (65 vs 76 °C hottest), matching the throttling seen in power.
+No sensor is identified as the GPU yet, so no GPU temperature is shown.
+
+`PulseCore/Resources/TemperatureSensors.json` groups sensors by name prefix per model, with defaults
+for unknown models: chip hottest and average (PMU tdie), SSD and battery. Readings outside 0-130 °C
+are dropped. Only mapped sensors are opened. Temperatures show in the Power panel and are read only
+while it is open.

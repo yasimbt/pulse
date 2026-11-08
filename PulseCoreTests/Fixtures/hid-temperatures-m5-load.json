@@ -1,0 +1,189 @@
+{
+ "comment": "IOHIDEventSystemClient temperature sensors on the M5 (Mac17,3) after 25 s of 4 busy loops, from Tools/spikes/hid-temps.",
+ "sensors": [
+  {
+   "name": "NAND CH0 temp",
+   "celsius": 40.0
+  },
+  {
+   "name": "PMU tcal",
+   "celsius": 51.82
+  },
+  {
+   "name": "PMU tdev1",
+   "celsius": -22.06
+  },
+  {
+   "name": "PMU tdev2",
+   "celsius": 46.35
+  },
+  {
+   "name": "PMU tdev3",
+   "celsius": 31.54
+  },
+  {
+   "name": "PMU tdev4",
+   "celsius": 45.89
+  },
+  {
+   "name": "PMU tdev5",
+   "celsius": 50.15
+  },
+  {
+   "name": "PMU tdev6",
+   "celsius": 33.7
+  },
+  {
+   "name": "PMU tdev7",
+   "celsius": 36.91
+  },
+  {
+   "name": "PMU tdev8",
+   "celsius": 42.61
+  },
+  {
+   "name": "PMU tdie1",
+   "celsius": 76.03
+  },
+  {
+   "name": "PMU tdie10",
+   "celsius": 60.04
+  },
+  {
+   "name": "PMU tdie11",
+   "celsius": 57.4
+  },
+  {
+   "name": "PMU tdie12",
+   "celsius": 56.84
+  },
+  {
+   "name": "PMU tdie13",
+   "celsius": 56.52
+  },
+  {
+   "name": "PMU tdie14",
+   "celsius": 56.6
+  },
+  {
+   "name": "PMU tdie2",
+   "celsius": 59.24
+  },
+  {
+   "name": "PMU tdie3",
+   "celsius": 61.48
+  },
+  {
+   "name": "PMU tdie4",
+   "celsius": 57.32
+  },
+  {
+   "name": "PMU tdie5",
+   "celsius": 58.36
+  },
+  {
+   "name": "PMU tdie6",
+   "celsius": 70.03
+  },
+  {
+   "name": "PMU tdie7",
+   "celsius": 59.64
+  },
+  {
+   "name": "PMU tdie8",
+   "celsius": 71.55
+  },
+  {
+   "name": "PMU tdie9",
+   "celsius": 57.48
+  },
+  {
+   "name": "PMU2 tcal",
+   "celsius": 51.82
+  },
+  {
+   "name": "PMU2 tdev1",
+   "celsius": -21.83
+  },
+  {
+   "name": "PMU2 tdev2",
+   "celsius": 42.45
+  },
+  {
+   "name": "PMU2 tdev3",
+   "celsius": 58.14
+  },
+  {
+   "name": "PMU2 tdev4",
+   "celsius": 53.9
+  },
+  {
+   "name": "PMU2 tdev5",
+   "celsius": 46.73
+  },
+  {
+   "name": "PMU2 tdie1",
+   "celsius": 45.4
+  },
+  {
+   "name": "PMU2 tdie10",
+   "celsius": 43.65
+  },
+  {
+   "name": "PMU2 tdie2",
+   "celsius": 44.45
+  },
+  {
+   "name": "PMU2 tdie3",
+   "celsius": 44.53
+  },
+  {
+   "name": "PMU2 tdie4",
+   "celsius": 44.13
+  },
+  {
+   "name": "PMU2 tdie5",
+   "celsius": 44.21
+  },
+  {
+   "name": "PMU2 tdie6",
+   "celsius": 43.97
+  },
+  {
+   "name": "PMU2 tdie7",
+   "celsius": 43.73
+  },
+  {
+   "name": "PMU2 tdie8",
+   "celsius": 44.93
+  },
+  {
+   "name": "PMU2 tdie9",
+   "celsius": 43.25
+  },
+  {
+   "name": "gas gauge battery",
+   "celsius": 28.3
+  },
+  {
+   "name": "gas gauge battery",
+   "celsius": 28.0
+  },
+  {
+   "name": "gas gauge battery",
+   "celsius": 28.0
+  },
+  {
+   "name": "gas gauge battery",
+   "celsius": 28.0
+  },
+  {
+   "name": "gas gauge battery",
+   "celsius": 28.3
+  },
+  {
+   "name": "gas gauge battery",
+   "celsius": 28.3
+  }
+ ]
+}

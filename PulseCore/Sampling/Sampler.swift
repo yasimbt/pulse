@@ -7,7 +7,7 @@ public actor Sampler {
         public var modules: Set<ModuleKind>
         public var processes: Bool
         public var networkProcesses: Bool
-        /// The E/P split and frequencies, which cost more to read.
+        /// The E/P split, frequencies and temperatures, which cost more to read.
         public var powerDetail: Bool
 
         public init(modules: Set<ModuleKind>, processes: Bool = false, networkProcesses: Bool = false, powerDetail: Bool = false) {
@@ -34,6 +34,7 @@ public actor Sampler {
     private let networkProcesses = NetworkProcessCollector()
     private let selfUsage = SelfUsageCollector()
     private let power = PowerCollector()
+    private let temperature = TemperatureCollector()
 
     private let clock = ContinuousClock()
     private var interval: Double
@@ -93,6 +94,8 @@ public actor Sampler {
         if demand.modules.contains(.network) { snapshot.network = await attempt(network) }
         if demand.modules.contains(.battery) { snapshot.battery = await attempt(battery) }
         if demand.modules.contains(.power) || demand.powerDetail { snapshot.power = await attempt(power) }
+        // Shown only in the Power panel for now, so read only while it is open.
+        if demand.powerDetail { snapshot.thermal = await attempt(temperature) }
         if demand.processes { snapshot.processes = await attempt(processes) }
         if demand.networkProcesses { snapshot.networkProcesses = await currentNetworkProcesses() }
         snapshot.selfUsage = await attempt(selfUsage)

@@ -1,0 +1,17 @@
+{
+  "comment": "Groups IOHIDEventSystemClient temperature sensors by name prefix. Mac17,3 (M5 MacBook Air) is verified with busy loops: PMU tdie* rise 20-38 C under CPU load, PMU2 tdie* only about 10 C, so PMU2 is left out. Unknown models use the default rules. See docs/m2-findings.md.",
+  "default": [
+    { "id": "chipHottest", "title": "Chip, hottest", "prefix": "PMU tdie", "reduce": "max" },
+    { "id": "chipAverage", "title": "Chip, average", "prefix": "PMU tdie", "reduce": "mean" },
+    { "id": "ssd", "title": "SSD", "prefix": "NAND", "reduce": "max" },
+    { "id": "battery", "title": "Battery", "prefix": "gas gauge battery", "reduce": "mean" }
+  ],
+  "models": {
+    "Mac17,3": [
+      { "id": "chipHottest", "title": "Chip, hottest", "prefix": "PMU tdie", "reduce": "max" },
+      { "id": "chipAverage", "title": "Chip, average", "prefix": "PMU tdie", "reduce": "mean" },
+      { "id": "ssd", "title": "SSD", "prefix": "NAND", "reduce": "max" },
+      { "id": "battery", "title": "Battery", "prefix": "gas gauge battery", "reduce": "mean" }
+    ]
+  }
+}
