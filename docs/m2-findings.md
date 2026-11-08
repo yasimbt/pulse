@@ -35,3 +35,15 @@ them only while another client, such as `powermetrics` running as root, is sampl
 confirmed.
 - Running the spike as root does not help: 15 s of `sudo ior watch 15` showed no change in CPU,
   ECPU, PCPU, DRAM or ANE energy, while GPU Energy counted normally.
+
+## Why the CPU energy counters freeze, and a possible way around it
+- The counters update while `powermetrics` runs and freeze when it exits. In one run they were
+  still for 5 s, changed every second during 10 s of `powermetrics`, then froze again.
+- Other projects report the same on macOS 27 with M5-class chips: macmon reads 0 W CPU power, and
+  refreshing these counters appears to need a private Apple entitlement. Running as root is not
+  enough.
+- **`PMP / Energy`** has live per-cluster histograms: `EACC0` (E cluster), `PACC0` (P cluster) and
+  `AGX` (GPU), each with an SRAM channel. Each state is a power bucket, such as `0.250W` or `16W`,
+  and its value is an event count. Under 4 busy loops, the P cluster moved from about 1 W to the
+  16-17 W buckets. The time per event is unknown, so `ior calibrate` and `calibrate.sh` measure
+  the histograms against Energy Model while `powermetrics` keeps it live.

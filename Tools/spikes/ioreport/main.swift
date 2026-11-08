@@ -85,6 +85,8 @@ let groups: [(String, String?)] = [
     ("Energy Model", nil),
     ("CPU Stats", "CPU Core Performance States"),
     ("GPU Stats", "GPU Performance States"),
+    // Per-cluster energy histograms, reported to keep updating on macOS 27 when Energy Model stalls.
+    ("PMP", "Energy"),
 ]
 var merged: CFMutableDictionary?
 for (group, subgroup) in groups {
@@ -113,6 +115,41 @@ if CommandLine.arguments.dropFirst().first == "watch" {
         print("\(second)  " + names.map { values[$0].map(String.init) ?? "-" }.joined(separator: " | "))
         Thread.sleep(forTimeInterval: 1)
     }
+    exit(0)
+}
+
+// `ior calibrate S`: over S seconds, print Energy Model energy (J) next to the PMP histogram sums
+// (sum of bucket watts x event count). Run with powermetrics active so Energy Model counts.
+if CommandLine.arguments.dropFirst().first == "calibrate" {
+    let span = Double(CommandLine.arguments.dropFirst(2).first ?? "10") ?? 10
+    let start = createSamples(subscription, subscribedChannels, nil)!.takeRetainedValue()
+    Thread.sleep(forTimeInterval: span)
+    let end = createSamples(subscription, subscribedChannels, nil)!.takeRetainedValue()
+    let change = createDelta(start, end, nil)!.takeRetainedValue() as NSDictionary
+    var model: [String: Double] = [:], histogram: [String: Double] = [:], events: [String: Double] = [:]
+    for item in change["IOReportChannels"] as? [NSDictionary] ?? [] {
+        let channel = item as CFDictionary
+        let name = str(getName(channel))
+        if getFormat(channel) == 1, ["ECPU", "PCPU", "GPU Energy"].contains(name) {
+            let unit = str(getUnit(channel)).trimmingCharacters(in: .whitespaces)
+            model[name] = Double(getInteger(channel, 0)) * (unit == "nJ" ? 1e-9 : 1e-3)
+        } else if getFormat(channel) == 2, str(getSubGroup(channel)) == "Energy" {
+            for index in 0..<getStateCount(channel) {
+                let label = str(getStateName(channel, index)).trimmingCharacters(in: .whitespaces)
+                let watts = Double(label.dropLast()) ?? 0
+                let count = Double(getResidency(channel, index))
+                histogram[name, default: 0] += watts * count
+                events[name, default: 0] += count
+            }
+        }
+    }
+    func fmt(_ value: Double?) -> String { String(format: "%.3f", value ?? .nan) }
+    let e = (histogram["EACC0"] ?? 0) + (histogram["EACC0 SRAM"] ?? 0)
+    let p = (histogram["PACC0"] ?? 0) + (histogram["PACC0 SRAM"] ?? 0)
+    let g = (histogram["AGX"] ?? 0) + (histogram["AGX SRAM"] ?? 0)
+    print("span_s=\(span) ECPU_J=\(fmt(model["ECPU"])) PCPU_J=\(fmt(model["PCPU"])) GPU_J=\(fmt(model["GPU Energy"]))"
+        + " E_hist=\(fmt(e)) P_hist=\(fmt(p)) G_hist=\(fmt(g))"
+        + " E_events=\(Int(events["EACC0"] ?? 0)) P_events=\(Int(events["PACC0"] ?? 0)) G_events=\(Int(events["AGX"] ?? 0))")
     exit(0)
 }
 
