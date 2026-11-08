@@ -127,6 +127,10 @@ if CommandLine.arguments.dropFirst().first == "calibrate" {
     let end = createSamples(subscription, subscribedChannels, nil)!.takeRetainedValue()
     let change = createDelta(start, end, nil)!.takeRetainedValue() as NSDictionary
     var model: [String: Double] = [:], histogram: [String: Double] = [:], events: [String: Double] = [:]
+    // Midpoint model: a bucket label is the top of its range, and each event lasts about 227.3 us
+    // (the P cluster records at most ~4399 events per second when fully busy).
+    let eventSeconds = 12.0 / 52790.0
+    var estimate: [String: Double] = [:]
     for item in change["IOReportChannels"] as? [NSDictionary] ?? [] {
         let channel = item as CFDictionary
         let name = str(getName(channel))
@@ -134,12 +138,16 @@ if CommandLine.arguments.dropFirst().first == "calibrate" {
             let unit = str(getUnit(channel)).trimmingCharacters(in: .whitespaces)
             model[name] = Double(getInteger(channel, 0)) * (unit == "nJ" ? 1e-9 : 1e-3)
         } else if getFormat(channel) == 2, str(getSubGroup(channel)) == "Energy" {
-            for index in 0..<getStateCount(channel) {
-                let label = str(getStateName(channel, index)).trimmingCharacters(in: .whitespaces)
-                let watts = Double(label.dropLast()) ?? 0
-                let count = Double(getResidency(channel, index))
-                histogram[name, default: 0] += watts * count
-                events[name, default: 0] += count
+            let buckets = (0..<getStateCount(channel)).map { index in
+                (watts: Double(str(getStateName(channel, index)).trimmingCharacters(in: .whitespaces).dropLast()) ?? 0,
+                 count: Double(getResidency(channel, index)))
+            }
+            let levels = buckets.map(\.watts).filter { $0 > 0 }.sorted()
+            let step = zip(levels.dropFirst(), levels).map { $0 - $1 }.filter { $0 > 0 }.min() ?? 0
+            for bucket in buckets {
+                histogram[name, default: 0] += bucket.watts * bucket.count
+                events[name, default: 0] += bucket.count
+                estimate[name, default: 0] += max(0, bucket.watts - step / 2) * bucket.count * eventSeconds
             }
         }
     }
@@ -149,7 +157,16 @@ if CommandLine.arguments.dropFirst().first == "calibrate" {
     let g = (histogram["AGX"] ?? 0) + (histogram["AGX SRAM"] ?? 0)
     print("span_s=\(span) ECPU_J=\(fmt(model["ECPU"])) PCPU_J=\(fmt(model["PCPU"])) GPU_J=\(fmt(model["GPU Energy"]))"
         + " E_hist=\(fmt(e)) P_hist=\(fmt(p)) G_hist=\(fmt(g))"
-        + " E_events=\(Int(events["EACC0"] ?? 0)) P_events=\(Int(events["PACC0"] ?? 0)) G_events=\(Int(events["AGX"] ?? 0))")
+        + " E_events=\(Int(events["EACC0"] ?? 0)) P_events=\(Int(events["PACC0"] ?? 0)) G_events=\(Int(events["AGX"] ?? 0))"
+        + " E_sram_events=\(Int(events["EACC0 SRAM"] ?? 0)) P_sram_events=\(Int(events["PACC0 SRAM"] ?? 0))")
+    let estE = (estimate["EACC0"] ?? 0) + (estimate["EACC0 SRAM"] ?? 0)
+    let estP = (estimate["PACC0"] ?? 0) + (estimate["PACC0 SRAM"] ?? 0)
+    func error(_ est: Double, _ ref: Double?) -> String {
+        guard let ref, ref > 0 else { return "n/a" }
+        return String(format: "%+.1f%%", (est / ref - 1) * 100)
+    }
+    print("  estimate: E=\(fmt(estE / span)) W (\(error(estE, model["ECPU"]))) P=\(fmt(estP / span)) W (\(error(estP, model["PCPU"])))"
+        + " CPU=\(fmt((estE + estP) / span)) W (\(error(estE + estP, (model["ECPU"] ?? 0) + (model["PCPU"] ?? 0))))")
     exit(0)
 }
 
