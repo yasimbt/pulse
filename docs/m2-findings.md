@@ -47,3 +47,30 @@ confirmed.
   and its value is an event count. Under 4 busy loops, the P cluster moved from about 1 W to the
   16-17 W buckets. The time per event is unknown, so `ior calibrate` and `calibrate.sh` measure
   the histograms against Energy Model while `powermetrics` keeps it live.
+
+## Calibration result: CPU watts from the PMP histograms
+`sudo sh Tools/spikes/ioreport/calibrate.sh`, 12 s per stage, MacBook Air (Mac17,3, no fan).
+
+| Busy loops | powermetrics CPU | Energy Model CPU | Histogram estimate | vs powermetrics | vs Energy Model |
+|---|---|---|---|---|---|
+| 0 | 0.085 W | 0.216 W | 0.154 W | +81.2% | -28.6% |
+| 1 | 6.707 W | 6.882 W | 6.728 W | +0.3% | -2.2% |
+| 2 | 8.775 W | 8.978 W | 8.556 W | -2.5% | -4.7% |
+| 4 | 18.247 W | 18.426 W | 18.263 W | +0.1% | -0.9% |
+| 6 | 14.494 W | 14.608 W | 14.333 W | -1.1% | -1.9% |
+| 10 | 11.372 W | 11.564 W | 11.511 W | +1.2% | -0.5% |
+
+**Model:** energy = sum over buckets of (bucket label - step / 2) x event count x 227.3 us, for the
+cluster channel plus its SRAM channel. A bucket label is the top of its range, and `step` is the
+spacing between buckets. Both clusters record at most about 4,399 events per second (52,790-52,811
+per 12 s when busy), which gives the 227.3 us.
+
+- **Under load it is within 2.5% of powermetrics**, well inside M2's ±10% target, with no root and
+  no powermetrics running.
+- **At idle the three sources disagree** (0.085, 0.154 and 0.216 W), so percentages are not
+  meaningful there. The estimate is within 0.07 W of powermetrics, which is fine for display.
+- 6 and 10 loops drew less than 4: this fanless Air throttles under sustained all-core load. M4's
+  throttling detection can use this.
+- GPU power uses the `GPU Energy` counter, which stays live without root. It is not calibrated
+  under GPU load yet.
+- ANE and DRAM have no live source, so they will be hidden.
