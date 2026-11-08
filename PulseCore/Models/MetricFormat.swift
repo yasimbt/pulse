@@ -37,6 +37,29 @@ public enum MetricFormat {
         return fixed(value, digits: index == 0 || value >= 10 ? 0 : 1) + units[index]
     }
 
+    /// Watts with one decimal below 100 W, for panels. For example "18.3 W" or "0.2 W".
+    public static func watts(_ value: Double) -> String {
+        let clamped = max(0, value)
+        return fixed(clamped, digits: clamped < 100 ? 1 : 0) + " W"
+    }
+
+    /// Compact watts for the menu bar: "0.4W", "4.2W", "18W".
+    public static func compactWatts(_ value: Double) -> String {
+        let clamped = max(0, value)
+        return fixed(clamped, digits: clamped < 10 ? 1 : 0) + "W"
+    }
+
+    /// Energy in watt-hours, or milliwatt-hours below 1 Wh.
+    public static func energy(joules: Double) -> String {
+        let wattHours = max(0, joules) / 3600
+        if wattHours < 1 { return "\(Int((wattHours * 1000).rounded())) mWh" }
+        return fixed(wattHours, digits: wattHours < 100 ? 1 : 0) + " Wh"
+    }
+
+    public static func frequency(_ hertz: Double) -> String {
+        "\(Int((hertz / 1e6).rounded())) MHz"
+    }
+
     /// One core is 100%, matching Activity Monitor's process list.
     public static func cores(_ value: Double) -> String {
         String(format: "%.2f%%", value * 100)

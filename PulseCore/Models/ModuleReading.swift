@@ -11,6 +11,8 @@ public struct ModuleReading: Sendable, Equatable {
 
     /// Floor for auto-scaling, so an idle link does not fill the bar with a few bytes.
     static let minimumRateScale = 1_000_000.0
+    /// Floor for auto-scaling power, so an idle Mac does not fill the bar.
+    static let minimumWattScale = 10.0
 
     public static func make(_ kind: ModuleKind, snapshot: Snapshot, recentPeak: Double) -> ModuleReading? {
         switch kind {
@@ -49,6 +51,15 @@ public struct ModuleReading: Sendable, Equatable {
                     accessibilityValue: "Battery \(value), \(state)"
                 )
             }
+        case .power:
+            guard let power = snapshot.power, power.cpuWatts != nil else { return nil }
+            let total = power.totalWatts
+            return ModuleReading(
+                text: MetricFormat.compactWatts(total),
+                fraction: min(1, total / max(recentPeak, minimumWattScale)),
+                series: .powerTotal,
+                accessibilityValue: "Power \(MetricFormat.watts(total)), CPU and GPU"
+            )
         }
     }
 }

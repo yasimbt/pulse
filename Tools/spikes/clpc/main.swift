@@ -72,6 +72,13 @@ print("subscribed \(subscribedCount) of \(channels.count) channels")
 let seconds = Int(CommandLine.arguments.dropFirst().first ?? "10") ?? 10
 let gap = Double(CommandLine.arguments.dropFirst(2).first ?? "1") ?? 1
 var previous = createSamples(subscription, subscribedChannels, nil)!.takeRetainedValue()
+// Raw values: if these are totals since boot, they give energy since boot directly.
+for item in (previous as NSDictionary)["IOReportChannels"] as? [NSDictionary] ?? [] {
+    let channel = item as CFDictionary
+    let name = getName(channel).map { $0.takeUnretainedValue() as String } ?? "?"
+    let value = getInteger(channel, 0)
+    print(String(format: "raw %@: %lld nJ = %.2f Wh", name, value, Double(value) / 1e9 / 3600))
+}
 var previousTime = Date()
 var sampleCPU: UInt64 = 0
 for _ in 0..<seconds {

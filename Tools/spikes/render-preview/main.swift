@@ -16,23 +16,25 @@ func run(_ out: String) async throws {
     _ = NSApplication.shared
     let model = LiveModel()
     let cpu = CPUCollector(), mem = MemoryCollector(), disk = DiskCollector(), net = NetworkCollector()
-    let bat = BatteryCollector(), procs = ProcessCollector()
-    var snap = Snapshot(timestamp: Date())
-    for _ in 0..<2 {
-        snap = Snapshot(timestamp: Date())
+    let bat = BatteryCollector(), procs = ProcessCollector(), power = PowerCollector()
+    await power.setDetail(true)
+    // A few samples, so that charts and "since opened" have something to show.
+    for index in 0..<6 {
+        var snap = Snapshot(timestamp: Date())
         snap.cpu = try await cpu.sample(); snap.memory = try await mem.sample(); snap.disk = try await disk.sample()
         snap.network = try await net.sample(); snap.battery = try? await bat.sample(); snap.processes = try await procs.sample()
+        snap.power = try? await power.sample()
+        if index > 0 { model.ingest(snap, enabled: ModuleKind.allCases) }
         try await Task.sleep(for: .seconds(1))
     }
-    model.ingest(snap, enabled: ModuleKind.allCases)
 
-    // Menu-bar image: every renderer, all five modules, both layouts, in light and dark.
+    // Menu-bar image: every renderer, every module, both layouts, in light and dark.
     for renderer in RendererKind.allCases {
         for compact in [false, true] {
             let segments = ModuleKind.allCases.map { kind in
-                let reading = ModuleReading.make(kind, snapshot: snap, recentPeak: 0)
+                let reading = ModuleReading.make(kind, snapshot: model.snapshot ?? Snapshot(timestamp: Date()), recentPeak: 0)
                 return StatusSegment(label: kind.shortLabel, renderer: renderer, tint: .system, text: reading?.text ?? "-",
-                                     widthTemplate: kind == .network ? "↓999K ↑999K" : "100%",
+                                     widthTemplate: kind == .network ? "↓999K ↑999K" : (kind == .power ? "99.9W" : "100%"),
                                      fillSteps: 14, spark: (0..<18).map { 2 + ($0 * 3) % 12 })
             }
             for (name, appearanceName) in [("light", NSAppearance.Name.aqua), ("dark", .darkAqua)] {
@@ -64,12 +66,12 @@ func run(_ out: String) async throws {
         save(host, "\(out)/panel-\(kind.rawValue).png")
     }
     // ImageRenderer draws pure SwiftUI faithfully. AppKit-backed controls such as buttons show as placeholders.
-    for kinds in [ModuleKind.allCases, [.cpu, .memory], [.cpu]] as [[ModuleKind]] {
+    for kinds in [ModuleKind.allCases, [.cpu, .memory], [.cpu], [.power]] as [[ModuleKind]] {
         let view = PanelHost(kinds: kinds, model: model, actions: actions).background(Color.white)
         let renderer = ImageRenderer(content: view)
         renderer.scale = 2
         if let image = renderer.nsImage, let tiff = image.tiffRepresentation, let rep = NSBitmapImageRep(data: tiff) {
-            try rep.representation(using: .png, properties: [:])?.write(to: URL(fileURLWithPath: "\(out)/tabs-\(kinds.count).png"))
+            try rep.representation(using: .png, properties: [:])?.write(to: URL(fileURLWithPath: "\(out)/tabs-\(kinds.count)-\(kinds[0].rawValue).png"))
             print("tabs \(kinds.count): \(image.size)")
         }
     }

@@ -4,9 +4,9 @@ import IOKit
 /// CPU, GPU and Neural Engine watts, plus cluster detail and frequencies, from IOReport. Needs no
 /// root. See docs/m2-findings.md for why each source is used.
 ///
-/// - Always: AppleCLPC's aggregate counters on verified chips, about 1 ms per sample. Elsewhere,
-///   the PMP energy histograms plus the Energy Model GPU counter, which cost about 7.5 ms per
-///   sample, so they are read at most every 5 s.
+/// - Always: AppleCLPC's aggregate counters on verified chips, about 1.5 ms per sample, read at
+///   most every 2 s. Elsewhere, the PMP energy histograms plus the Energy Model GPU counter, which
+///   cost about 7.5 ms per sample, so they are read at most every 5 s.
 /// - With detail on, such as while the Power panel is open: the PMP histograms for the E/P split,
 ///   and performance-state residency for frequencies, every sample.
 public actor PowerCollector: Collector {
@@ -18,12 +18,16 @@ public actor PowerCollector: Collector {
         IOReportSubscription.Selection(group: "CPU Stats", subgroup: "CPU Core Performance States", channels: nil),
         IOReportSubscription.Selection(group: "GPU Stats", subgroup: "GPU Performance States", channels: ["GPUPH"])
     ]
+    /// Without detail, power is read at most this often. Each read averages the whole interval,
+    /// so no energy is missed. At 1 s, the Power item put Pulse over its 0.5% CPU budget.
+    private static let summaryInterval: Duration = .seconds(2)
     private static let fallbackInterval: Duration = .seconds(5)
 
     /// One subscription and its previous sample.
     private final class Feed {
         let subscription: IOReportSubscription
         var previous: (sample: CFDictionary, time: ContinuousClock.Instant)?
+        var latestTotals: [IOReportReading] { previous.map { subscription.readings(in: $0.sample) } ?? [] }
 
         init(_ selections: [IOReportSubscription.Selection], extraChannels: [NSDictionary] = []) throws {
             subscription = try IOReportSubscription(selections, extraChannels: extraChannels)
@@ -63,8 +67,9 @@ public actor PowerCollector: Collector {
         self.tables = tables
         let now = clock.now
 
-        // The fallback is expensive, so between its reads the last sample is repeated.
-        if !usesCLPC, !detail, let last, now - last.time < Self.fallbackInterval {
+        // Between reads, the last sample is repeated.
+        let interval = usesCLPC ? Self.summaryInterval : Self.fallbackInterval
+        if !detail, let last, now - last.time < interval {
             return last.sample
         }
         var extra: [IOReportReading] = []
@@ -78,7 +83,9 @@ public actor PowerCollector: Collector {
         guard let change = try base.advance(at: now) else {
             return .empty
         }
-        let sample = PowerCalculations.sample(change.readings + extra, seconds: change.seconds, tables: tables)
+        var sample = PowerCalculations.sample(change.readings + extra, seconds: change.seconds, tables: tables)
+        // Only the panel shows it, so it isn't read while the panel is closed.
+        if usesCLPC, detail { sample.energySinceBootJoules = PowerCalculations.cumulativeJoules(base.latestTotals) }
         last = (sample, now)
         return sample
     }

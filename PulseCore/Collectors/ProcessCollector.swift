@@ -45,7 +45,8 @@ public actor ProcessCollector: Collector {
                 ),
                 footprintBytes: usage.ri_phys_footprint,
                 diskReadBytes: usage.ri_diskio_bytesread,
-                diskWriteBytes: usage.ri_diskio_byteswritten
+                diskWriteBytes: usage.ri_diskio_byteswritten,
+                energyNanojoules: usage.ri_energy_nj
             ))
         }
         return (counters, unreadable)

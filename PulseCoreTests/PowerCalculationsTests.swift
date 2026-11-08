@@ -128,3 +128,39 @@ private let clpcLoad = [
     #expect(CLPCChannels.channels(osMajorVersion: 26) == nil)
     #expect(CLPCChannels.channels(osMajorVersion: 28) == nil)
 }
+
+@Test func cumulativeEnergyComesFromCLPCTotals() {
+    // Raw totals read on the M5 after 5.9 days of uptime.
+    let totals = [
+        IOReportReading(group: "CLPC", subgroup: "Energy Counters", channel: "CPU Energy", unit: "nJ", value: 179_500_848_636_975),
+        IOReportReading(group: "CLPC", subgroup: "Energy Counters", channel: "GPU Energy", unit: "nJ", value: 4_987_778_511_780),
+        IOReportReading(group: "CLPC", subgroup: "Energy Counters", channel: "ANE", unit: "nJ", value: 4_773_477_757_405)
+    ]
+    // The Neural Engine is left out until it's verified.
+    #expect(close(PowerCalculations.cumulativeJoules(totals), 179_500.848636975 + 4_987.77851178))
+    // Energy Model's CPU counters stall, so they are never used as a running total.
+    let model = [IOReportReading(group: "Energy Model", subgroup: "", channel: "GPU Energy", unit: "nJ", value: 5)]
+    #expect(PowerCalculations.cumulativeJoules(model) == nil)
+}
+
+@Test func powerFormatsForPanelsAndMenuBar() {
+    #expect(MetricFormat.watts(18.298) == "18.3 W")
+    #expect(MetricFormat.watts(0.04) == "0.0 W")
+    #expect(MetricFormat.watts(123.4) == "123 W")
+    #expect(MetricFormat.compactWatts(4.24) == "4.2W")
+    #expect(MetricFormat.compactWatts(18.3) == "18W")
+    #expect(MetricFormat.energy(joules: 3600 * 49.86) == "49.9 Wh")
+    #expect(MetricFormat.energy(joules: 360) == "100 mWh")
+    #expect(MetricFormat.frequency(4_464e6) == "4464 MHz")
+}
+
+@Test func powerModuleReadingNeedsCPUWatts() {
+    var snapshot = Snapshot(timestamp: Date())
+    #expect(ModuleReading.make(.power, snapshot: snapshot, recentPeak: 0) == nil)
+    snapshot.power = PowerSample(cpuWatts: 4, clusters: [], gpuWatts: 1, aneWatts: 0, gpuActiveFraction: nil, gpuFrequencyHz: nil)
+    let reading = try? #require(ModuleReading.make(.power, snapshot: snapshot, recentPeak: 0))
+    #expect(reading?.text == "5.0W")
+    // Scaled against at least 10 W, so idle doesn't fill the bar.
+    #expect(reading?.fraction == 0.5)
+    #expect(reading?.series == .powerTotal)
+}

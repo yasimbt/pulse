@@ -21,6 +21,7 @@ struct ModulePanel: View {
         case .disk: DiskDetails(sample: model.snapshot?.disk)
         case .network: NetworkDetails(sample: model.snapshot?.network)
         case .battery: BatteryDetails(sample: model.snapshot?.battery)
+        case .power: PowerDetails(sample: model.snapshot?.power, energyJoules: model.energyJoules)
         }
     }
 
@@ -46,6 +47,14 @@ struct ModulePanel: View {
             )
         case .battery:
             HistoryChart(title: "Battery", lines: [.init(name: "Charge", series: .batteryCharge)], scale: .fraction, history: model.history)
+        case .power:
+            HistoryChart(
+                title: "Power",
+                lines: [.init(name: "CPU", series: .powerCPU), .init(name: "GPU", series: .powerGPU)],
+                scale: .watts,
+                history: model.history,
+                stacked: true
+            )
         }
     }
 }

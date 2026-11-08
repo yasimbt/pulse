@@ -7,11 +7,14 @@ public actor Sampler {
         public var modules: Set<ModuleKind>
         public var processes: Bool
         public var networkProcesses: Bool
+        /// The E/P split and frequencies, which cost more to read.
+        public var powerDetail: Bool
 
-        public init(modules: Set<ModuleKind>, processes: Bool = false, networkProcesses: Bool = false) {
+        public init(modules: Set<ModuleKind>, processes: Bool = false, networkProcesses: Bool = false, powerDetail: Bool = false) {
             self.modules = modules
             self.processes = processes
             self.networkProcesses = networkProcesses
+            self.powerDetail = powerDetail
         }
     }
 
@@ -30,6 +33,7 @@ public actor Sampler {
     private let processes = ProcessCollector()
     private let networkProcesses = NetworkProcessCollector()
     private let selfUsage = SelfUsageCollector()
+    private let power = PowerCollector()
 
     private let clock = ContinuousClock()
     private var interval: Double
@@ -69,8 +73,10 @@ public actor Sampler {
         interval = seconds.clamped(to: Self.intervalRange)
     }
 
-    public func setDemand(_ newDemand: Demand) {
+    public func setDemand(_ newDemand: Demand) async {
+        let detailChanged = newDemand.powerDetail != demand.powerDetail
         demand = newDemand
+        if detailChanged { await power.setDetail(newDemand.powerDetail) }
     }
 
     private func sleepDelay() -> Double { interval }
@@ -86,6 +92,7 @@ public actor Sampler {
         if demand.modules.contains(.disk) { snapshot.disk = await attempt(disk) }
         if demand.modules.contains(.network) { snapshot.network = await attempt(network) }
         if demand.modules.contains(.battery) { snapshot.battery = await attempt(battery) }
+        if demand.modules.contains(.power) || demand.powerDetail { snapshot.power = await attempt(power) }
         if demand.processes { snapshot.processes = await attempt(processes) }
         if demand.networkProcesses { snapshot.networkProcesses = await currentNetworkProcesses() }
         snapshot.selfUsage = await attempt(selfUsage)

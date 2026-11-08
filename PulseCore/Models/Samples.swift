@@ -92,12 +92,15 @@ public struct ProcessUsage: Sendable, Equatable {
     public let footprintBytes: UInt64
     public let diskReadBytesPerSecond: Double
     public let diskWriteBytesPerSecond: Double
+    /// Apple's per-process energy estimate, averaged over the interval.
+    public let energyWatts: Double
 }
 
 public struct ProcessTable: Sendable, Equatable {
     public let byCPU: [ProcessUsage]
     public let byMemory: [ProcessUsage]
     public let byDisk: [ProcessUsage]
+    public let byEnergy: [ProcessUsage]
     /// Processes owned by other users, which cannot be read without privileges.
     public let unreadableCount: Int
 }
@@ -125,6 +128,7 @@ public struct Snapshot: Sendable, Equatable {
     public var processes: ProcessTable?
     public var networkProcesses: [NetworkProcessUsage]?
     public var selfUsage: SelfUsage?
+    public var power: PowerSample?
 
     public init(timestamp: Date) {
         self.timestamp = timestamp

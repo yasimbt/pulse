@@ -2,6 +2,7 @@ import Foundation
 
 public enum SeriesID: String, CaseIterable, Sendable {
     case cpuTotal, memoryUsed, diskRead, diskWrite, networkDown, networkUp, batteryCharge
+    case powerCPU, powerGPU, powerTotal
 }
 
 public struct TimedValue: Sendable, Equatable {
@@ -36,6 +37,9 @@ public struct MetricHistory: Sendable {
         add(.networkDown, snapshot.network?.downBytesPerSecond)
         add(.networkUp, snapshot.network?.upBytesPerSecond)
         add(.batteryCharge, snapshot.battery?.chargeFraction)
+        add(.powerCPU, snapshot.power?.cpuWatts)
+        add(.powerGPU, snapshot.power?.gpuWatts)
+        add(.powerTotal, snapshot.power.flatMap { $0.cpuWatts == nil ? nil : $0.totalWatts })
     }
 
     /// Points inside the ten-minute window ending at `now`, oldest first.

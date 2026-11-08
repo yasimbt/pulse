@@ -132,16 +132,27 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
             renderer: config.renderer,
             tint: config.tint,
             text: reading.text,
-            widthTemplate: config.kind == .network ? "↓999K ↑999K" : "100%",
+            widthTemplate: Self.widthTemplate(config.kind),
             fillSteps: Int((min(1, max(0, reading.fraction)) * Double(StatusSegment.barSteps)).rounded()),
             spark: config.renderer == .sparkline ? spark(reading.series) : []
         )
     }
 
+    private static func widthTemplate(_ kind: ModuleKind) -> String {
+        switch kind {
+        case .network: "↓999K ↑999K"
+        case .power: "99.9W"
+        default: "100%"
+        }
+    }
+
     private func spark(_ series: SeriesID) -> [Int] {
         let values = model.history.recentValues(series, count: StatusSegment.sparkColumns)
-        let isFraction = series == .cpuTotal || series == .memoryUsed || series == .batteryCharge
-        let scale = isFraction ? 1 : max(values.max() ?? 0, 1_000_000)
+        let scale: Double = switch series {
+        case .cpuTotal, .memoryUsed, .batteryCharge: 1
+        case .powerCPU, .powerGPU, .powerTotal: max(values.max() ?? 0, 10)
+        default: max(values.max() ?? 0, 1_000_000)
+        }
         return values.map { Int((min(1, $0 / scale) * Double(StatusSegment.sparkSteps)).rounded()) }
     }
 

@@ -34,6 +34,8 @@ public struct PowerSample: Sendable, Equatable {
     public let aneWatts: Double?
     public let gpuActiveFraction: Double?
     public let gpuFrequencyHz: Double?
+    /// CPU and GPU energy since the Mac started, from cumulative counters.
+    public var energySinceBootJoules: Double?
 
     public init(
         cpuWatts: Double?,
@@ -41,7 +43,8 @@ public struct PowerSample: Sendable, Equatable {
         gpuWatts: Double?,
         aneWatts: Double?,
         gpuActiveFraction: Double?,
-        gpuFrequencyHz: Double?
+        gpuFrequencyHz: Double?,
+        energySinceBootJoules: Double? = nil
     ) {
         self.cpuWatts = cpuWatts
         self.clusters = clusters
@@ -49,13 +52,15 @@ public struct PowerSample: Sendable, Equatable {
         self.aneWatts = aneWatts
         self.gpuActiveFraction = gpuActiveFraction
         self.gpuFrequencyHz = gpuFrequencyHz
+        self.energySinceBootJoules = energySinceBootJoules
     }
 
     static let empty = PowerSample(cpuWatts: nil, clusters: [], gpuWatts: nil, aneWatts: nil, gpuActiveFraction: nil, gpuFrequencyHz: nil)
 
-    /// CPU, GPU and Neural Engine. Excludes memory and the rest of the system, which this Mac
-    /// does not report without root. See docs/m2-findings.md.
-    public var totalWatts: Double { (cpuWatts ?? 0) + (gpuWatts ?? 0) + (aneWatts ?? 0) }
+    /// CPU and GPU. The Neural Engine is left out until its counter is checked against
+    /// powermetrics, and memory and the rest of the system aren't reported without root.
+    /// See docs/m2-findings.md.
+    public var totalWatts: Double { (cpuWatts ?? 0) + (gpuWatts ?? 0) }
 
     public func cluster(_ kind: ClusterPower.Kind) -> ClusterPower? {
         clusters.first { $0.kind == kind }

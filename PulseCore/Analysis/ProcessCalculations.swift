@@ -6,14 +6,25 @@ public struct ProcessCounters: Sendable, Equatable {
     public let footprintBytes: UInt64
     public let diskReadBytes: UInt64
     public let diskWriteBytes: UInt64
+    /// `ri_energy_nj`: Apple's running estimate of the process's energy use.
+    public let energyNanojoules: UInt64
 
-    public init(pid: Int32, name: String, cpuNanoseconds: UInt64, footprintBytes: UInt64, diskReadBytes: UInt64, diskWriteBytes: UInt64) {
+    public init(
+        pid: Int32,
+        name: String,
+        cpuNanoseconds: UInt64,
+        footprintBytes: UInt64,
+        diskReadBytes: UInt64,
+        diskWriteBytes: UInt64,
+        energyNanojoules: UInt64 = 0
+    ) {
         self.pid = pid
         self.name = name
         self.cpuNanoseconds = cpuNanoseconds
         self.footprintBytes = footprintBytes
         self.diskReadBytes = diskReadBytes
         self.diskWriteBytes = diskWriteBytes
+        self.energyNanojoules = energyNanojoules
     }
 }
 
@@ -37,7 +48,8 @@ public enum ProcessCalculations {
                 cpuCores: cpu,
                 footprintBytes: now.footprintBytes,
                 diskReadBytesPerSecond: Rates.perSecond(current: now.diskReadBytes, previous: old.diskReadBytes, seconds: seconds),
-                diskWriteBytesPerSecond: Rates.perSecond(current: now.diskWriteBytes, previous: old.diskWriteBytes, seconds: seconds)
+                diskWriteBytesPerSecond: Rates.perSecond(current: now.diskWriteBytes, previous: old.diskWriteBytes, seconds: seconds),
+                energyWatts: Rates.perSecond(current: now.energyNanojoules, previous: old.energyNanojoules, seconds: seconds) / 1e9
             )
         }
     }
@@ -50,6 +62,7 @@ public enum ProcessCalculations {
             byCPU: top(\.cpuCores),
             byMemory: top { Double($0.footprintBytes) },
             byDisk: top { $0.diskReadBytesPerSecond + $0.diskWriteBytesPerSecond },
+            byEnergy: top(\.energyWatts),
             unreadableCount: unreadableCount
         )
     }

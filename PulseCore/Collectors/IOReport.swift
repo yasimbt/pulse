@@ -139,8 +139,13 @@ final class IOReportSubscription {
 
     /// The change between two samples, copied into plain values.
     func readings(from start: CFDictionary, to end: CFDictionary) -> [IOReportReading] {
-        guard let delta = library.createDelta(start, end, nil)?.takeRetainedValue() as NSDictionary?,
-              let list = delta["IOReportChannels"] as? [NSDictionary] else { return [] }
+        guard let delta = library.createDelta(start, end, nil)?.takeRetainedValue() else { return [] }
+        return readings(in: delta)
+    }
+
+    /// The values in one sample or delta. For a raw sample, simple counters are running totals.
+    func readings(in sample: CFDictionary) -> [IOReportReading] {
+        guard let list = (sample as NSDictionary)["IOReportChannels"] as? [NSDictionary] else { return [] }
         if layout.count != list.count { layout = list.map { describe($0 as CFDictionary) } }
         return zip(list, layout.indices).compactMap { item, index in
             let channel = item as CFDictionary

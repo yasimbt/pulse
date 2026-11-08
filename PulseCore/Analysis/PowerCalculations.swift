@@ -153,6 +153,15 @@ public enum PowerCalculations {
         return result
     }
 
+    /// Total CPU and GPU energy in one raw (not delta) sample, matching `PowerSample.totalWatts`. Only AppleCLPC's
+    /// counters are used: they keep counting, while Energy Model's CPU counters stall.
+    public static func cumulativeJoules(_ readings: [IOReportReading]) -> Double? {
+        var counters = Counters()
+        for reading in readings where reading.group == CLPCChannels.group { _ = counters.add(reading) }
+        guard let cpu = counters.cpu else { return nil }
+        return cpu + (counters.clpcGPU ?? 0)
+    }
+
     /// Joules from one PMP energy histogram. Each state is a power bucket labelled with the top
     /// of its range, such as "16W", and counts events. Each event is charged at the bucket's midpoint.
     public static func histogramJoules(_ states: [IOReportReading.State]) -> Double {

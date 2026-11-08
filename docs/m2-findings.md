@@ -110,3 +110,14 @@ cluster split, but cost far more.
 - Frequency tables come from `pmgr` and are used only when their length matches the residency
   states, so an unverified chip shows watts without frequencies rather than wrong frequencies.
 - ANE watts are read but not yet checked against powermetrics under an ANE workload.
+
+## Full app with Power in the menu bar (Release, combined item, panels closed)
+| Configuration | CPU |
+|---|---|
+| Power off (same session, for comparison) | 0.420% over 193 s |
+| Power read every second | 0.553%, then 0.537% after skipping the since-boot total while closed |
+| Power read every 2 s (current) | 0.503%, 0.495% |
+
+Power adds about 0.08% when read every 2 s, which puts the combined item right at the 0.5% target.
+Each read averages the whole interval, so the slower refresh misses no energy. The panel still
+reads every second, with the cluster split and frequencies. Footprint stays at 23 MB closed.

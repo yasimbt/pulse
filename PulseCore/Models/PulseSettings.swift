@@ -1,5 +1,5 @@
 public enum ModuleKind: String, Codable, CaseIterable, Sendable, Identifiable {
-    case cpu, memory, disk, network, battery
+    case cpu, memory, disk, network, battery, power
 
     public var id: String { rawValue }
 
@@ -10,6 +10,7 @@ public enum ModuleKind: String, Codable, CaseIterable, Sendable, Identifiable {
         case .disk: "Disk"
         case .network: "Network"
         case .battery: "Battery"
+        case .power: "Power"
         }
     }
 
@@ -21,6 +22,7 @@ public enum ModuleKind: String, Codable, CaseIterable, Sendable, Identifiable {
         case .disk: "DSK"
         case .network: "NET"
         case .battery: "BAT"
+        case .power: "PWR"
         }
     }
 }
@@ -73,6 +75,7 @@ public struct PulseSettings: Codable, Equatable, Sendable {
     public static let `default` = PulseSettings(
         modules: [
             ModuleConfig(kind: .cpu, isEnabled: true, renderer: .sparkline),
+            ModuleConfig(kind: .power, isEnabled: true, renderer: .text),
             ModuleConfig(kind: .memory, isEnabled: true, renderer: .bar),
             ModuleConfig(kind: .network, isEnabled: true, renderer: .text),
             ModuleConfig(kind: .disk, isEnabled: false, renderer: .text),

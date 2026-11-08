@@ -63,7 +63,8 @@ final class AppController: NSObject, NSWindowDelegate {
         let demand = Sampler.Demand(
             modules: Set(store.settings.enabledModules.map(\.kind)),
             processes: openPanel != nil,
-            networkProcesses: openPanel?.contains(.network) ?? false
+            networkProcesses: openPanel?.contains(.network) ?? false,
+            powerDetail: openPanel?.contains(.power) ?? false
         )
         let sampler = sampler
         Task { await sampler.setDemand(demand) }

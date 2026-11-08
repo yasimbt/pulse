@@ -64,8 +64,20 @@ private func counters(_ name: String, _ received: UInt64, _ sent: UInt64, up: Bo
     #expect(abs(Double(nanoseconds) / 1e9 - 1.0) < 0.01)
 }
 
-private func process(_ pid: Int32, cpu: UInt64, footprint: UInt64 = 0, read: UInt64 = 0) -> ProcessCounters {
-    ProcessCounters(pid: pid, name: "p\(pid)", cpuNanoseconds: cpu, footprintBytes: footprint, diskReadBytes: read, diskWriteBytes: 0)
+private func process(_ pid: Int32, cpu: UInt64, footprint: UInt64 = 0, read: UInt64 = 0, energy: UInt64 = 0) -> ProcessCounters {
+    ProcessCounters(
+        pid: pid, name: "p\(pid)", cpuNanoseconds: cpu, footprintBytes: footprint, diskReadBytes: read, diskWriteBytes: 0,
+        energyNanojoules: energy
+    )
+}
+
+@Test func processEnergyBecomesWattsAndIsRanked() {
+    let previous: [Int32: ProcessCounters] = [1: process(1, cpu: 0, energy: 1_000), 2: process(2, cpu: 0, energy: 0)]
+    let current = [process(1, cpu: 0, energy: 4_000_001_000), process(2, cpu: 0, energy: 500_000_000)]
+    let usages = ProcessCalculations.usages(previous: previous, current: current, seconds: 2)
+    #expect(usages.first { $0.pid == 1 }?.energyWatts == 2)
+    let table = ProcessCalculations.table(usages: usages, unreadableCount: 0)
+    #expect(table.byEnergy.map(\.pid) == [1, 2])
 }
 
 @Test func processCPURateAndNewPidSkipped() {
