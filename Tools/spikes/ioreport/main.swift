@@ -118,6 +118,37 @@ if CommandLine.arguments.dropFirst().first == "watch" {
     exit(0)
 }
 
+// `ior time`: cost of IOReportCreateSamples and the delta for each group on its own.
+// `ior time [gap] [count]` waits `gap` seconds between samples, as Pulse would.
+if CommandLine.arguments.dropFirst().first == "time" {
+    let clock = ContinuousClock()
+    let gap = Double(CommandLine.arguments.dropFirst(2).first ?? "0") ?? 0
+    let rounds = Int(CommandLine.arguments.dropFirst(3).first ?? "50") ?? 50
+    for (group, subgroup) in groups {
+        guard let found = copyChannels(group as CFString, subgroup as CFString?, 0, 0, 0)?.takeRetainedValue() else { continue }
+        var subbed: Unmanaged<CFMutableDictionary>?
+        guard let sub = createSubscription(nil, found, &subbed, 0, nil), let chans = subbed?.takeRetainedValue() else { continue }
+        var previous = createSamples(sub, chans, nil)!.takeRetainedValue()
+        var sampleTime = Duration.zero, deltaTime = Duration.zero
+        let cpu0 = clock_gettime_nsec_np(CLOCK_PROCESS_CPUTIME_ID)
+        for _ in 0..<rounds {
+            if gap > 0 { Thread.sleep(forTimeInterval: gap) }
+            let t0 = clock.now
+            let next = createSamples(sub, chans, nil)!.takeRetainedValue()
+            let t1 = clock.now
+            _ = createDelta(previous, next, nil)
+            deltaTime += clock.now - t1
+            sampleTime += t1 - t0
+            previous = next
+        }
+        let count = ((found as NSDictionary)["IOReportChannels"] as? [Any])?.count ?? 0
+        let cpuMs = Double(clock_gettime_nsec_np(CLOCK_PROCESS_CPUTIME_ID) - cpu0) / Double(rounds) / 1e6
+        print("\(group) / \(subgroup ?? "-") [\(count) channels]: wall sample \(sampleTime / rounds), delta \(deltaTime / rounds),"
+            + String(format: " CPU %.3f ms per sample+delta", cpuMs))
+    }
+    exit(0)
+}
+
 // `ior calibrate S`: over S seconds, print Energy Model energy (J) next to the PMP histogram sums
 // (sum of bucket watts x event count). Run with powermetrics active so Energy Model counts.
 if CommandLine.arguments.dropFirst().first == "calibrate" {
@@ -167,6 +198,53 @@ if CommandLine.arguments.dropFirst().first == "calibrate" {
     }
     print("  estimate: E=\(fmt(estE / span)) W (\(error(estE, model["ECPU"]))) P=\(fmt(estP / span)) W (\(error(estP, model["PCPU"])))"
         + " CPU=\(fmt((estE + estP) / span)) W (\(error(estE + estP, (model["ECPU"] ?? 0) + (model["PCPU"] ?? 0))))")
+    exit(0)
+}
+
+// `ior dump S`: one delta over S seconds as JSON, in PulseCore's IOReportReading format, plus the
+// pmgr frequency tables. Used to record test fixtures.
+if CommandLine.arguments.dropFirst().first == "dump" {
+    let span = Double(CommandLine.arguments.dropFirst(2).first ?? "2") ?? 2
+    let start = createSamples(subscription, subscribedChannels, nil)!.takeRetainedValue()
+    Thread.sleep(forTimeInterval: span)
+    let end = createSamples(subscription, subscribedChannels, nil)!.takeRetainedValue()
+    let change = createDelta(start, end, nil)!.takeRetainedValue() as NSDictionary
+    var readings: [[String: Any]] = []
+    for item in change["IOReportChannels"] as? [NSDictionary] ?? [] {
+        let channel = item as CFDictionary
+        let name = str(getName(channel))
+        let group = str(getGroup(channel))
+        // Keep what the power collector reads; Energy Model has ~160 other channels.
+        if group == "Energy Model", name != "GPU Energy" { continue }
+        var reading: [String: Any] = [
+            "group": group, "subgroup": getSubGroup(channel).map { $0.takeUnretainedValue() as String } ?? "", "channel": name,
+            "unit": str(getUnit(channel)).trimmingCharacters(in: .whitespaces),
+        ]
+        switch getFormat(channel) {
+        case 1: reading["value"] = getInteger(channel, 0)
+        case 2:
+            reading["states"] = (0..<getStateCount(channel)).map { index in
+                ["name": str(getStateName(channel, index)).trimmingCharacters(in: .whitespaces),
+                 "value": getResidency(channel, index)] as [String: Any]
+            }
+        default: continue
+        }
+        readings.append(reading)
+    }
+    var tables: [String: [UInt32]] = [:]
+    let service = IOServiceGetMatchingService(kIOMainPortDefault, IOServiceNameMatching("pmgr"))
+    var props: Unmanaged<CFMutableDictionary>?
+    if service != 0, IORegistryEntryCreateCFProperties(service, &props, kCFAllocatorDefault, 0) == KERN_SUCCESS,
+       let dict = props?.takeRetainedValue() as? [String: Any] {
+        for key in ["voltage-states1-sram", "voltage-states5-sram", "voltage-states9"] {
+            guard let data = dict[key] as? Data else { continue }
+            tables[key] = data.withUnsafeBytes { Array($0.bindMemory(to: UInt32.self)) }
+        }
+        IOObjectRelease(service)
+    }
+    let output: [String: Any] = ["seconds": span, "readings": readings, "voltageStates": tables]
+    let json = try! JSONSerialization.data(withJSONObject: output, options: [.prettyPrinted, .sortedKeys])
+    FileHandle.standardOutput.write(json)
     exit(0)
 }
 

@@ -74,3 +74,29 @@ per 12 s when busy), which gives the 227.3 us.
 - GPU power uses the `GPU Energy` counter, which stays live without root. It is not calibrated
   under GPU load yet.
 - ANE and DRAM have no live source, so they will be hidden.
+
+## Sampling cost, and the cheaper AppleCLPC counters
+CPU time per `IOReportCreateSamples` + delta, one sample per 1-3 s (`ior time 1 8`, `ior time 3 4`).
+Almost all of it is the kernel call; back-to-back calls look cheaper because the cores are already
+running fast.
+
+| Group | CPU per sample |
+|---|---|
+| PMP / Energy (histograms) | 7.3-7.6 ms |
+| Energy Model, all 167 channels | 5.5-6.1 ms |
+| CPU Stats / CPU Core Performance States | 3.1 ms |
+| GPU Stats / GPU Performance States | 1.6-1.8 ms |
+
+At one sample per second, PMP alone would cost about 0.75% CPU, more than Pulse's whole budget.
+
+**AppleCLPC aggregate counters** (`Tools/spikes/clpc`): the CPU performance controller keeps hidden
+energy counters in a `CLPC / Energy Counters` group that IOReport doesn't list. macmon 0.9 (MIT)
+describes them by hand with per-chip IDs extracted from macOS 27.0. With its M5 (`AppleT8142CLPC`)
+IDs on macOS 27.2, without root:
+- CPU Energy: 0.18-0.30 W idle and 18.0-18.5 W with 4 busy loops (powermetrics: 18.2 W).
+- GPU Energy counts; ANE reads 0 at idle and is not yet checked under an ANE workload.
+- **Cost: 0.5-1.1 ms per sample**, roughly a seventh of the PMP histograms.
+
+Trade-offs: CLPC gives one CPU total rather than E/P clusters, and its IDs are chip- and
+OS-specific, so they may change with a macOS update. The PMP histograms need no IDs and give the
+cluster split, but cost far more.
