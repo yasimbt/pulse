@@ -14,4 +14,5 @@ public struct MetricID: RawRepresentable, Hashable, Sendable {
     public static let processes = MetricID(rawValue: "processes")
     public static let networkProcesses = MetricID(rawValue: "networkProcesses")
     public static let selfUsage = MetricID(rawValue: "selfUsage")
+    public static let power = MetricID(rawValue: "power")
 }

@@ -1,0 +1,1604 @@
+{
+ "readings": [
+  {
+   "channel": "GPU Energy",
+   "group": "Energy Model",
+   "subgroup": "",
+   "unit": "nJ",
+   "value": 21792645
+  },
+  {
+   "channel": "ECPU0",
+   "group": "CPU Stats",
+   "states": [
+    {
+     "name": "IDLE",
+     "value": 41335089
+    },
+    {
+     "name": "V0P7",
+     "value": 3448495
+    },
+    {
+     "name": "V1P6",
+     "value": 82737
+    },
+    {
+     "name": "V2P5",
+     "value": 406640
+    },
+    {
+     "name": "V3P4",
+     "value": 280724
+    },
+    {
+     "name": "V4P3",
+     "value": 116014
+    },
+    {
+     "name": "V5P2",
+     "value": 70627
+    },
+    {
+     "name": "V6P1",
+     "value": 0
+    },
+    {
+     "name": "V7P0",
+     "value": 2548640
+    }
+   ],
+   "subgroup": "CPU Core Performance States",
+   "unit": "24Mticks"
+  },
+  {
+   "channel": "ECPU1",
+   "group": "CPU Stats",
+   "states": [
+    {
+     "name": "IDLE",
+     "value": 42683764
+    },
+    {
+     "name": "V0P7",
+     "value": 2388657
+    },
+    {
+     "name": "V1P6",
+     "value": 48582
+    },
+    {
+     "name": "V2P5",
+     "value": 493991
+    },
+    {
+     "name": "V3P4",
+     "value": 215609
+    },
+    {
+     "name": "V4P3",
+     "value": 39948
+    },
+    {
+     "name": "V5P2",
+     "value": 41186
+    },
+    {
+     "name": "V6P1",
+     "value": 0
+    },
+    {
+     "name": "V7P0",
+     "value": 2377229
+    }
+   ],
+   "subgroup": "CPU Core Performance States",
+   "unit": "24Mticks"
+  },
+  {
+   "channel": "ECPU2",
+   "group": "CPU Stats",
+   "states": [
+    {
+     "name": "IDLE",
+     "value": 45506218
+    },
+    {
+     "name": "V0P7",
+     "value": 1111018
+    },
+    {
+     "name": "V1P6",
+     "value": 18396
+    },
+    {
+     "name": "V2P5",
+     "value": 84146
+    },
+    {
+     "name": "V3P4",
+     "value": 47793
+    },
+    {
+     "name": "V4P3",
+     "value": 8178
+    },
+    {
+     "name": "V5P2",
+     "value": 2541
+    },
+    {
+     "name": "V6P1",
+     "value": 0
+    },
+    {
+     "name": "V7P0",
+     "value": 1510676
+    }
+   ],
+   "subgroup": "CPU Core Performance States",
+   "unit": "24Mticks"
+  },
+  {
+   "channel": "ECPU3",
+   "group": "CPU Stats",
+   "states": [
+    {
+     "name": "IDLE",
+     "value": 47454403
+    },
+    {
+     "name": "V0P7",
+     "value": 363658
+    },
+    {
+     "name": "V1P6",
+     "value": 3054
+    },
+    {
+     "name": "V2P5",
+     "value": 14044
+    },
+    {
+     "name": "V3P4",
+     "value": 17022
+    },
+    {
+     "name": "V4P3",
+     "value": 4774
+    },
+    {
+     "name": "V5P2",
+     "value": 864
+    },
+    {
+     "name": "V6P1",
+     "value": 0
+    },
+    {
+     "name": "V7P0",
+     "value": 431147
+    }
+   ],
+   "subgroup": "CPU Core Performance States",
+   "unit": "24Mticks"
+  },
+  {
+   "channel": "ECPU4",
+   "group": "CPU Stats",
+   "states": [
+    {
+     "name": "IDLE",
+     "value": 47796207
+    },
+    {
+     "name": "V0P7",
+     "value": 253337
+    },
+    {
+     "name": "V1P6",
+     "value": 0
+    },
+    {
+     "name": "V2P5",
+     "value": 3389
+    },
+    {
+     "name": "V3P4",
+     "value": 3406
+    },
+    {
+     "name": "V4P3",
+     "value": 617
+    },
+    {
+     "name": "V5P2",
+     "value": 1337
+    },
+    {
+     "name": "V6P1",
+     "value": 0
+    },
+    {
+     "name": "V7P0",
+     "value": 230673
+    }
+   ],
+   "subgroup": "CPU Core Performance States",
+   "unit": "24Mticks"
+  },
+  {
+   "channel": "ECPU5",
+   "group": "CPU Stats",
+   "states": [
+    {
+     "name": "IDLE",
+     "value": 48088894
+    },
+    {
+     "name": "V0P7",
+     "value": 100746
+    },
+    {
+     "name": "V1P6",
+     "value": 0
+    },
+    {
+     "name": "V2P5",
+     "value": 4093
+    },
+    {
+     "name": "V3P4",
+     "value": 1134
+    },
+    {
+     "name": "V4P3",
+     "value": 0
+    },
+    {
+     "name": "V5P2",
+     "value": 0
+    },
+    {
+     "name": "V6P1",
+     "value": 0
+    },
+    {
+     "name": "V7P0",
+     "value": 94099
+    }
+   ],
+   "subgroup": "CPU Core Performance States",
+   "unit": "24Mticks"
+  },
+  {
+   "channel": "PCPU0",
+   "group": "CPU Stats",
+   "states": [
+    {
+     "name": "IDLE",
+     "value": 0
+    },
+    {
+     "name": "V0P18",
+     "value": 0
+    },
+    {
+     "name": "V1P17",
+     "value": 0
+    },
+    {
+     "name": "V2P16",
+     "value": 0
+    },
+    {
+     "name": "V3P15",
+     "value": 0
+    },
+    {
+     "name": "V4P14",
+     "value": 0
+    },
+    {
+     "name": "V5P13",
+     "value": 0
+    },
+    {
+     "name": "V6P12",
+     "value": 0
+    },
+    {
+     "name": "V7P11",
+     "value": 0
+    },
+    {
+     "name": "V8P10",
+     "value": 0
+    },
+    {
+     "name": "V9P9",
+     "value": 0
+    },
+    {
+     "name": "V10P8",
+     "value": 0
+    },
+    {
+     "name": "V11P7",
+     "value": 0
+    },
+    {
+     "name": "V12P6",
+     "value": 0
+    },
+    {
+     "name": "V13P5",
+     "value": 0
+    },
+    {
+     "name": "V14P4",
+     "value": 0
+    },
+    {
+     "name": "V15P3",
+     "value": 0
+    },
+    {
+     "name": "V16P2",
+     "value": 0
+    },
+    {
+     "name": "V17P1",
+     "value": 0
+    },
+    {
+     "name": "V18P0",
+     "value": 48289454
+    }
+   ],
+   "subgroup": "CPU Core Performance States",
+   "unit": "24Mticks"
+  },
+  {
+   "channel": "PCPU1",
+   "group": "CPU Stats",
+   "states": [
+    {
+     "name": "IDLE",
+     "value": 0
+    },
+    {
+     "name": "V0P18",
+     "value": 0
+    },
+    {
+     "name": "V1P17",
+     "value": 0
+    },
+    {
+     "name": "V2P16",
+     "value": 0
+    },
+    {
+     "name": "V3P15",
+     "value": 0
+    },
+    {
+     "name": "V4P14",
+     "value": 0
+    },
+    {
+     "name": "V5P13",
+     "value": 0
+    },
+    {
+     "name": "V6P12",
+     "value": 0
+    },
+    {
+     "name": "V7P11",
+     "value": 0
+    },
+    {
+     "name": "V8P10",
+     "value": 0
+    },
+    {
+     "name": "V9P9",
+     "value": 0
+    },
+    {
+     "name": "V10P8",
+     "value": 0
+    },
+    {
+     "name": "V11P7",
+     "value": 0
+    },
+    {
+     "name": "V12P6",
+     "value": 0
+    },
+    {
+     "name": "V13P5",
+     "value": 0
+    },
+    {
+     "name": "V14P4",
+     "value": 0
+    },
+    {
+     "name": "V15P3",
+     "value": 0
+    },
+    {
+     "name": "V16P2",
+     "value": 0
+    },
+    {
+     "name": "V17P1",
+     "value": 0
+    },
+    {
+     "name": "V18P0",
+     "value": 48289454
+    }
+   ],
+   "subgroup": "CPU Core Performance States",
+   "unit": "24Mticks"
+  },
+  {
+   "channel": "PCPU2",
+   "group": "CPU Stats",
+   "states": [
+    {
+     "name": "IDLE",
+     "value": 0
+    },
+    {
+     "name": "V0P18",
+     "value": 0
+    },
+    {
+     "name": "V1P17",
+     "value": 0
+    },
+    {
+     "name": "V2P16",
+     "value": 0
+    },
+    {
+     "name": "V3P15",
+     "value": 0
+    },
+    {
+     "name": "V4P14",
+     "value": 0
+    },
+    {
+     "name": "V5P13",
+     "value": 0
+    },
+    {
+     "name": "V6P12",
+     "value": 0
+    },
+    {
+     "name": "V7P11",
+     "value": 0
+    },
+    {
+     "name": "V8P10",
+     "value": 0
+    },
+    {
+     "name": "V9P9",
+     "value": 0
+    },
+    {
+     "name": "V10P8",
+     "value": 0
+    },
+    {
+     "name": "V11P7",
+     "value": 0
+    },
+    {
+     "name": "V12P6",
+     "value": 0
+    },
+    {
+     "name": "V13P5",
+     "value": 0
+    },
+    {
+     "name": "V14P4",
+     "value": 0
+    },
+    {
+     "name": "V15P3",
+     "value": 0
+    },
+    {
+     "name": "V16P2",
+     "value": 0
+    },
+    {
+     "name": "V17P1",
+     "value": 0
+    },
+    {
+     "name": "V18P0",
+     "value": 48289454
+    }
+   ],
+   "subgroup": "CPU Core Performance States",
+   "unit": "24Mticks"
+  },
+  {
+   "channel": "PCPU3",
+   "group": "CPU Stats",
+   "states": [
+    {
+     "name": "IDLE",
+     "value": 0
+    },
+    {
+     "name": "V0P18",
+     "value": 0
+    },
+    {
+     "name": "V1P17",
+     "value": 0
+    },
+    {
+     "name": "V2P16",
+     "value": 0
+    },
+    {
+     "name": "V3P15",
+     "value": 0
+    },
+    {
+     "name": "V4P14",
+     "value": 0
+    },
+    {
+     "name": "V5P13",
+     "value": 0
+    },
+    {
+     "name": "V6P12",
+     "value": 0
+    },
+    {
+     "name": "V7P11",
+     "value": 0
+    },
+    {
+     "name": "V8P10",
+     "value": 0
+    },
+    {
+     "name": "V9P9",
+     "value": 0
+    },
+    {
+     "name": "V10P8",
+     "value": 0
+    },
+    {
+     "name": "V11P7",
+     "value": 0
+    },
+    {
+     "name": "V12P6",
+     "value": 0
+    },
+    {
+     "name": "V13P5",
+     "value": 0
+    },
+    {
+     "name": "V14P4",
+     "value": 0
+    },
+    {
+     "name": "V15P3",
+     "value": 0
+    },
+    {
+     "name": "V16P2",
+     "value": 0
+    },
+    {
+     "name": "V17P1",
+     "value": 0
+    },
+    {
+     "name": "V18P0",
+     "value": 48289454
+    }
+   ],
+   "subgroup": "CPU Core Performance States",
+   "unit": "24Mticks"
+  },
+  {
+   "channel": "GPUPH",
+   "group": "GPU Stats",
+   "states": [
+    {
+     "name": "OFF",
+     "value": 46577508
+    },
+    {
+     "name": "P1",
+     "value": 1741839
+    },
+    {
+     "name": "P2",
+     "value": 0
+    },
+    {
+     "name": "P3",
+     "value": 0
+    },
+    {
+     "name": "P4",
+     "value": 0
+    },
+    {
+     "name": "P5",
+     "value": 0
+    },
+    {
+     "name": "P6",
+     "value": 0
+    },
+    {
+     "name": "P7",
+     "value": 0
+    },
+    {
+     "name": "P8",
+     "value": 0
+    },
+    {
+     "name": "P9",
+     "value": 0
+    },
+    {
+     "name": "P10",
+     "value": 0
+    },
+    {
+     "name": "P11",
+     "value": 0
+    },
+    {
+     "name": "P12",
+     "value": 0
+    },
+    {
+     "name": "P13",
+     "value": 0
+    },
+    {
+     "name": "P14",
+     "value": 0
+    },
+    {
+     "name": "P15",
+     "value": 0
+    }
+   ],
+   "subgroup": "GPU Performance States",
+   "unit": "24Mticks"
+  },
+  {
+   "channel": "EACC0",
+   "group": "PMP",
+   "states": [
+    {
+     "name": "0.250W",
+     "value": 1598
+    },
+    {
+     "name": "0.500W",
+     "value": 500
+    },
+    {
+     "name": "0.750W",
+     "value": 274
+    },
+    {
+     "name": "1.000W",
+     "value": 143
+    },
+    {
+     "name": "1.250W",
+     "value": 37
+    },
+    {
+     "name": "1.500W",
+     "value": 13
+    },
+    {
+     "name": "1.750W",
+     "value": 2
+    },
+    {
+     "name": "2.000W",
+     "value": 5
+    },
+    {
+     "name": "2.250W",
+     "value": 2
+    },
+    {
+     "name": "2.500W",
+     "value": 0
+    },
+    {
+     "name": "2.750W",
+     "value": 1
+    },
+    {
+     "name": "3.000W",
+     "value": 0
+    },
+    {
+     "name": "3.250W",
+     "value": 0
+    },
+    {
+     "name": "3.500W",
+     "value": 2
+    },
+    {
+     "name": "3.750W",
+     "value": 0
+    },
+    {
+     "name": "4.000W",
+     "value": 2
+    },
+    {
+     "name": "4.250W",
+     "value": 0
+    },
+    {
+     "name": "4.500W",
+     "value": 0
+    },
+    {
+     "name": "4.750W",
+     "value": 0
+    },
+    {
+     "name": "5.000W",
+     "value": 0
+    },
+    {
+     "name": "5.250W",
+     "value": 0
+    },
+    {
+     "name": "5.500W",
+     "value": 0
+    },
+    {
+     "name": "5.750W",
+     "value": 0
+    },
+    {
+     "name": "6.000W",
+     "value": 0
+    },
+    {
+     "name": "6.250W",
+     "value": 0
+    },
+    {
+     "name": "6.500W",
+     "value": 0
+    },
+    {
+     "name": "6.750W",
+     "value": 0
+    },
+    {
+     "name": "7.000W",
+     "value": 0
+    },
+    {
+     "name": "7.250W",
+     "value": 0
+    },
+    {
+     "name": "7.500W",
+     "value": 0
+    },
+    {
+     "name": "7.750W",
+     "value": 0
+    },
+    {
+     "name": "8.000W",
+     "value": 0
+    }
+   ],
+   "subgroup": "Energy",
+   "unit": "events"
+  },
+  {
+   "channel": "EACC0 SRAM",
+   "group": "PMP",
+   "states": [
+    {
+     "name": "0.062W",
+     "value": 1443
+    },
+    {
+     "name": "0.124W",
+     "value": 484
+    },
+    {
+     "name": "0.186W",
+     "value": 338
+    },
+    {
+     "name": "0.248W",
+     "value": 206
+    },
+    {
+     "name": "0.310W",
+     "value": 71
+    },
+    {
+     "name": "0.372W",
+     "value": 20
+    },
+    {
+     "name": "0.434W",
+     "value": 6
+    },
+    {
+     "name": "0.496W",
+     "value": 2
+    },
+    {
+     "name": "0.558W",
+     "value": 3
+    },
+    {
+     "name": "0.620W",
+     "value": 4
+    },
+    {
+     "name": "0.682W",
+     "value": 1
+    },
+    {
+     "name": "0.744W",
+     "value": 0
+    },
+    {
+     "name": "0.806W",
+     "value": 1
+    },
+    {
+     "name": "0.868W",
+     "value": 0
+    },
+    {
+     "name": "0.930W",
+     "value": 0
+    },
+    {
+     "name": "0.992W",
+     "value": 0
+    },
+    {
+     "name": "1.054W",
+     "value": 0
+    },
+    {
+     "name": "1.116W",
+     "value": 0
+    },
+    {
+     "name": "1.178W",
+     "value": 0
+    },
+    {
+     "name": "1.240W",
+     "value": 0
+    },
+    {
+     "name": "1.302W",
+     "value": 0
+    },
+    {
+     "name": "1.364W",
+     "value": 0
+    },
+    {
+     "name": "1.426W",
+     "value": 0
+    },
+    {
+     "name": "1.488W",
+     "value": 0
+    },
+    {
+     "name": "1.550W",
+     "value": 0
+    },
+    {
+     "name": "1.612W",
+     "value": 0
+    },
+    {
+     "name": "1.674W",
+     "value": 0
+    },
+    {
+     "name": "1.736W",
+     "value": 0
+    },
+    {
+     "name": "1.798W",
+     "value": 0
+    },
+    {
+     "name": "1.860W",
+     "value": 0
+    },
+    {
+     "name": "1.922W",
+     "value": 0
+    },
+    {
+     "name": "1.984W",
+     "value": 0
+    }
+   ],
+   "subgroup": "Energy",
+   "unit": "events"
+  },
+  {
+   "channel": "PACC0",
+   "group": "PMP",
+   "states": [
+    {
+     "name": "1W",
+     "value": 0
+    },
+    {
+     "name": "2W",
+     "value": 0
+    },
+    {
+     "name": "3W",
+     "value": 0
+    },
+    {
+     "name": "4W",
+     "value": 0
+    },
+    {
+     "name": "5W",
+     "value": 0
+    },
+    {
+     "name": "6W",
+     "value": 0
+    },
+    {
+     "name": "7W",
+     "value": 0
+    },
+    {
+     "name": "8W",
+     "value": 0
+    },
+    {
+     "name": "9W",
+     "value": 0
+    },
+    {
+     "name": "10W",
+     "value": 0
+    },
+    {
+     "name": "11W",
+     "value": 18
+    },
+    {
+     "name": "12W",
+     "value": 8
+    },
+    {
+     "name": "13W",
+     "value": 4
+    },
+    {
+     "name": "14W",
+     "value": 4
+    },
+    {
+     "name": "15W",
+     "value": 3
+    },
+    {
+     "name": "16W",
+     "value": 215
+    },
+    {
+     "name": "17W",
+     "value": 8598
+    },
+    {
+     "name": "18W",
+     "value": 0
+    },
+    {
+     "name": "19W",
+     "value": 0
+    },
+    {
+     "name": "20W",
+     "value": 0
+    },
+    {
+     "name": "21W",
+     "value": 0
+    },
+    {
+     "name": "22W",
+     "value": 0
+    },
+    {
+     "name": "23W",
+     "value": 0
+    },
+    {
+     "name": "24W",
+     "value": 0
+    },
+    {
+     "name": "25W",
+     "value": 0
+    },
+    {
+     "name": "26W",
+     "value": 0
+    },
+    {
+     "name": "27W",
+     "value": 0
+    },
+    {
+     "name": "28W",
+     "value": 0
+    },
+    {
+     "name": "29W",
+     "value": 0
+    },
+    {
+     "name": "30W",
+     "value": 0
+    },
+    {
+     "name": "31W",
+     "value": 0
+    },
+    {
+     "name": "32W",
+     "value": 0
+    }
+   ],
+   "subgroup": "Energy",
+   "unit": "events"
+  },
+  {
+   "channel": "PACC0 SRAM",
+   "group": "PMP",
+   "states": [
+    {
+     "name": "0.125W",
+     "value": 0
+    },
+    {
+     "name": "0.250W",
+     "value": 0
+    },
+    {
+     "name": "0.375W",
+     "value": 0
+    },
+    {
+     "name": "0.500W",
+     "value": 0
+    },
+    {
+     "name": "0.625W",
+     "value": 0
+    },
+    {
+     "name": "0.750W",
+     "value": 0
+    },
+    {
+     "name": "0.875W",
+     "value": 0
+    },
+    {
+     "name": "1.000W",
+     "value": 0
+    },
+    {
+     "name": "1.125W",
+     "value": 0
+    },
+    {
+     "name": "1.250W",
+     "value": 8
+    },
+    {
+     "name": "1.375W",
+     "value": 14
+    },
+    {
+     "name": "1.500W",
+     "value": 5
+    },
+    {
+     "name": "1.625W",
+     "value": 7
+    },
+    {
+     "name": "1.750W",
+     "value": 5288
+    },
+    {
+     "name": "1.875W",
+     "value": 3528
+    },
+    {
+     "name": "2.000W",
+     "value": 0
+    },
+    {
+     "name": "2.125W",
+     "value": 0
+    },
+    {
+     "name": "2.250W",
+     "value": 0
+    },
+    {
+     "name": "2.375W",
+     "value": 0
+    },
+    {
+     "name": "2.500W",
+     "value": 0
+    },
+    {
+     "name": "2.625W",
+     "value": 0
+    },
+    {
+     "name": "2.750W",
+     "value": 0
+    },
+    {
+     "name": "2.875W",
+     "value": 0
+    },
+    {
+     "name": "3.000W",
+     "value": 0
+    },
+    {
+     "name": "3.125W",
+     "value": 0
+    },
+    {
+     "name": "3.250W",
+     "value": 0
+    },
+    {
+     "name": "3.375W",
+     "value": 0
+    },
+    {
+     "name": "3.500W",
+     "value": 0
+    },
+    {
+     "name": "3.625W",
+     "value": 0
+    },
+    {
+     "name": "3.750W",
+     "value": 0
+    },
+    {
+     "name": "3.875W",
+     "value": 0
+    },
+    {
+     "name": "4.000W",
+     "value": 0
+    }
+   ],
+   "subgroup": "Energy",
+   "unit": "events"
+  },
+  {
+   "channel": "AGX",
+   "group": "PMP",
+   "states": [
+    {
+     "name": "1W",
+     "value": 285
+    },
+    {
+     "name": "2W",
+     "value": 24
+    },
+    {
+     "name": "3W",
+     "value": 0
+    },
+    {
+     "name": "4W",
+     "value": 0
+    },
+    {
+     "name": "5W",
+     "value": 0
+    },
+    {
+     "name": "6W",
+     "value": 0
+    },
+    {
+     "name": "7W",
+     "value": 0
+    },
+    {
+     "name": "8W",
+     "value": 0
+    },
+    {
+     "name": "9W",
+     "value": 0
+    },
+    {
+     "name": "10W",
+     "value": 0
+    },
+    {
+     "name": "11W",
+     "value": 0
+    },
+    {
+     "name": "12W",
+     "value": 0
+    },
+    {
+     "name": "13W",
+     "value": 0
+    },
+    {
+     "name": "14W",
+     "value": 0
+    },
+    {
+     "name": "15W",
+     "value": 0
+    },
+    {
+     "name": "16W",
+     "value": 0
+    },
+    {
+     "name": "17W",
+     "value": 0
+    },
+    {
+     "name": "18W",
+     "value": 0
+    },
+    {
+     "name": "19W",
+     "value": 0
+    },
+    {
+     "name": "20W",
+     "value": 0
+    },
+    {
+     "name": "21W",
+     "value": 0
+    },
+    {
+     "name": "22W",
+     "value": 0
+    },
+    {
+     "name": "23W",
+     "value": 0
+    },
+    {
+     "name": "24W",
+     "value": 0
+    },
+    {
+     "name": "25W",
+     "value": 0
+    },
+    {
+     "name": "26W",
+     "value": 0
+    },
+    {
+     "name": "27W",
+     "value": 0
+    },
+    {
+     "name": "28W",
+     "value": 0
+    },
+    {
+     "name": "29W",
+     "value": 0
+    },
+    {
+     "name": "30W",
+     "value": 0
+    },
+    {
+     "name": "31W",
+     "value": 0
+    },
+    {
+     "name": "32W",
+     "value": 0
+    }
+   ],
+   "subgroup": "Energy",
+   "unit": "events"
+  },
+  {
+   "channel": "AGX SRAM",
+   "group": "PMP",
+   "states": [
+    {
+     "name": "0.125W",
+     "value": 309
+    },
+    {
+     "name": "0.250W",
+     "value": 0
+    },
+    {
+     "name": "0.375W",
+     "value": 0
+    },
+    {
+     "name": "0.500W",
+     "value": 0
+    },
+    {
+     "name": "0.625W",
+     "value": 0
+    },
+    {
+     "name": "0.750W",
+     "value": 0
+    },
+    {
+     "name": "0.875W",
+     "value": 0
+    },
+    {
+     "name": "1.000W",
+     "value": 0
+    },
+    {
+     "name": "1.125W",
+     "value": 0
+    },
+    {
+     "name": "1.250W",
+     "value": 0
+    },
+    {
+     "name": "1.375W",
+     "value": 0
+    },
+    {
+     "name": "1.500W",
+     "value": 0
+    },
+    {
+     "name": "1.625W",
+     "value": 0
+    },
+    {
+     "name": "1.750W",
+     "value": 0
+    },
+    {
+     "name": "1.875W",
+     "value": 0
+    },
+    {
+     "name": "2.000W",
+     "value": 0
+    },
+    {
+     "name": "2.125W",
+     "value": 0
+    },
+    {
+     "name": "2.250W",
+     "value": 0
+    },
+    {
+     "name": "2.375W",
+     "value": 0
+    },
+    {
+     "name": "2.500W",
+     "value": 0
+    },
+    {
+     "name": "2.625W",
+     "value": 0
+    },
+    {
+     "name": "2.750W",
+     "value": 0
+    },
+    {
+     "name": "2.875W",
+     "value": 0
+    },
+    {
+     "name": "3.000W",
+     "value": 0
+    },
+    {
+     "name": "3.125W",
+     "value": 0
+    },
+    {
+     "name": "3.250W",
+     "value": 0
+    },
+    {
+     "name": "3.375W",
+     "value": 0
+    },
+    {
+     "name": "3.500W",
+     "value": 0
+    },
+    {
+     "name": "3.625W",
+     "value": 0
+    },
+    {
+     "name": "3.750W",
+     "value": 0
+    },
+    {
+     "name": "3.875W",
+     "value": 0
+    },
+    {
+     "name": "4.000W",
+     "value": 0
+    }
+   ],
+   "subgroup": "Energy",
+   "unit": "events"
+  }
+ ],
+ "seconds": 2,
+ "voltageStates": {
+  "voltage-states1-sram": [
+   972000,
+   790,
+   1152000,
+   790,
+   1584000,
+   810,
+   1992000,
+   835,
+   2352000,
+   865,
+   2700000,
+   905,
+   2964000,
+   980,
+   3048000,
+   980
+  ],
+  "voltage-states5-sram": [
+   1308000,
+   790,
+   1608000,
+   790,
+   1932000,
+   810,
+   2220000,
+   840,
+   2508000,
+   850,
+   2820000,
+   870,
+   3072000,
+   905,
+   3300000,
+   940,
+   3516000,
+   965,
+   3720000,
+   985,
+   3876000,
+   1015,
+   4020000,
+   1045,
+   4176000,
+   1080,
+   4248000,
+   1080,
+   4272000,
+   1080,
+   4332000,
+   1080,
+   4428000,
+   1080,
+   4416000,
+   1110,
+   4464000,
+   1110
+  ],
+  "voltage-states9": [
+   0,
+   125,
+   338000000,
+   625,
+   486000000,
+   640,
+   636000000,
+   670,
+   796000000,
+   715,
+   888000000,
+   745,
+   988000000,
+   765,
+   1084000000,
+   795,
+   1182000000,
+   835,
+   1278000000,
+   870,
+   1374000000,
+   895,
+   1470000000,
+   950,
+   1578000000,
+   1015
+  ]
+ }
+}

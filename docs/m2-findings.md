@@ -100,3 +100,13 @@ IDs on macOS 27.2, without root:
 Trade-offs: CLPC gives one CPU total rather than E/P clusters, and its IDs are chip- and
 OS-specific, so they may change with a macOS update. The PMP histograms need no IDs and give the
 cluster split, but cost far more.
+
+## Power collector design (PulseCore)
+- **Always:** AppleCLPC CPU, GPU and ANE counters on verified chips (M5 on macOS 27), then
+  1.46 ms of CPU per sample, about 0.15% at a 1 s rate. Other chips or macOS versions fall back to
+  the PMP histograms plus the Energy Model GPU counter, read at most every 5 s.
+- **Detail on** (Power panel open): adds the PMP histograms for the E/P split and performance-state
+  residency for frequencies, 11.7 ms per sample in total.
+- Frequency tables come from `pmgr` and are used only when their length matches the residency
+  states, so an unverified chip shows watts without frequencies rather than wrong frequencies.
+- ANE watts are read but not yet checked against powermetrics under an ANE workload.

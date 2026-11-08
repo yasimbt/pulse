@@ -39,3 +39,19 @@ private struct StubCollector: Collector {
     #expect(try await NetworkCollector().sample().downBytesPerSecond >= 0)
     #expect(try await ProcessCollector().sample().unreadableCount >= 0)
 }
+
+@Test func livePowerCollectorReadsThisMachine() async throws {
+    let power = PowerCollector()
+    _ = try await power.sample()
+    try await Task.sleep(for: .milliseconds(300))
+    let sample = try await power.sample()
+    let cpuWatts = try #require(sample.cpuWatts)
+    #expect(cpuWatts >= 0 && cpuWatts < 100)
+    #expect(sample.gpuWatts != nil)
+
+    await power.setDetail(true)
+    _ = try await power.sample()
+    try await Task.sleep(for: .milliseconds(300))
+    let detailed = try #require(try await power.sample().cluster(.performance))
+    #expect((0...1).contains(detailed.activeFraction ?? -1))
+}
