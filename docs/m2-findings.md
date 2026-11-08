@@ -33,3 +33,5 @@ index is meaningful, not the timestamps.
 The counters work but update only some of the time. A likely cause is that the driver refreshes
 them only while another client, such as `powermetrics` running as root, is sampling. Not yet
 confirmed.
+- Running the spike as root does not help: 15 s of `sudo ior watch 15` showed no change in CPU,
+  ECPU, PCPU, DRAM or ANE energy, while GPU Energy counted normally.
