@@ -45,3 +45,12 @@ One service per physical port: `Port-USB-C@1`, `Port-USB-C@2` and `Port-MagSafe 
 | Check | battery's own 12.03 V x 4.385 A = 52.8 W, against telemetry's 51.6 W |
 
 Still to record: a second charger (MagSafe or another USB-C) and a hub or dock with devices.
+
+## Status (2026-11-09): M5 left open
+The developer chose to start M6 and finish M5 when the hardware is at hand. Done: port and charger
+readouts, every PD offer, measured input against the rating, and the charger-shortfall alert,
+tested on the UGREEN charger. Still to do before tagging v0.5.0:
+- A second charger (MagSafe or another USB-C) through `Tools/spikes/ports`.
+- A hub or dock with a device attached, to build the per-port device tree (USB and Thunderbolt
+  devices with link speed) and the "linked at USB 2 speed on a Thunderbolt port" alert.
+- Acceptance: a correct readout with 2 chargers and 1 dock or hub.
