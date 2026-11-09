@@ -37,3 +37,32 @@ private func snapshot() -> Snapshot {
     #expect(MetricsExport.number(61) == "61")
     #expect(MetricsExport.number(0.25) == "0.25")
 }
+
+private func text(_ data: Data) -> String { String(decoding: data, as: UTF8.self) }
+
+@Test func serverRoutesRequests() {
+    let prometheus = text(MetricsServer.response(to: "GET /metrics HTTP/1.1\r\nHost: localhost\r\n\r\n", snapshot: snapshot()))
+    #expect(prometheus.hasPrefix("HTTP/1.1 200 OK\r\nContent-Type: text/plain; version=0.0.4"))
+    #expect(prometheus.contains("pulse_cpu_usage_ratio 0.25"))
+    let json = text(MetricsServer.response(to: "GET /metrics.json?pretty HTTP/1.1\r\n\r\n", snapshot: snapshot()))
+    #expect(json.contains("Content-Type: application/json") && json.contains("\"pulse_cpu_usage_ratio\""))
+    #expect(text(MetricsServer.response(to: "GET / HTTP/1.1\r\n\r\n", snapshot: snapshot())).hasPrefix("HTTP/1.1 404"))
+    #expect(text(MetricsServer.response(to: "POST /metrics HTTP/1.1\r\n\r\n", snapshot: snapshot())).hasPrefix("HTTP/1.1 405"))
+    #expect(text(MetricsServer.response(to: "garbage", snapshot: snapshot())).hasPrefix("HTTP/1.1 400"))
+    #expect(text(MetricsServer.response(to: "GET /metrics HTTP/1.1\r\n\r\n", snapshot: nil)).hasPrefix("HTTP/1.1 503"))
+    // HEAD: headers with the body's length, but no body.
+    let head = text(MetricsServer.response(to: "HEAD /metrics HTTP/1.1\r\n\r\n", snapshot: snapshot()))
+    #expect(head.hasSuffix("\r\n\r\n") && !head.contains("pulse_cpu"))
+}
+
+@Test func serverAnswersOnLoopback() async throws {
+    let server = MetricsServer()
+    let port: UInt16 = 19466
+    try await server.start(port: port)
+    await server.update(snapshot())
+    try await Task.sleep(for: .milliseconds(200))
+    let (data, response) = try await URLSession.shared.data(from: try #require(URL(string: "http://127.0.0.1:\(port)/metrics")))
+    #expect((response as? HTTPURLResponse)?.statusCode == 200)
+    #expect(text(data).contains("pulse_power_watts{component=\"cpu\"} 12.5"))
+    await server.stop()
+}

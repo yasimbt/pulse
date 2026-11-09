@@ -27,6 +27,9 @@ struct SettingsView: View {
                 }
                 LaunchAtLoginToggle()
             }
+            Section("Sharing") {
+                MetricsServerRows(port: $store.settings.metricsServerPort)
+            }
             Section("Pulse's own overhead") {
                 OverheadRows(model: model)
             }
@@ -34,6 +37,25 @@ struct SettingsView: View {
         .formStyle(.grouped)
         .frame(width: 520)
         .fixedSize(horizontal: false, vertical: true)
+    }
+}
+
+/// The opt-in localhost endpoint for Prometheus and scripts.
+private struct MetricsServerRows: View {
+    @Binding var port: Int?
+
+    var body: some View {
+        Toggle("Serve metrics on this Mac (localhost only)", isOn: Binding(
+            get: { port != nil },
+            set: { port = $0 ? Int(MetricsServer.defaultPort) : nil }
+        ))
+        if let current = port {
+            TextField("Port", value: Binding(get: { current }, set: { port = $0 }), format: .number.grouping(.never))
+            Text("Prometheus: http://127.0.0.1:\(String(current))/metrics · JSON: /metrics.json. "
+                + "Only programs on this Mac can connect, and it covers the modules shown in the menu bar.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
     }
 }
 

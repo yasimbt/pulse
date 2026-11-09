@@ -67,11 +67,15 @@ public struct PulseSettings: Codable, Equatable, Sendable {
     public var modules: [ModuleConfig]
     public var sampleInterval: Double
     public var isCombined: Bool
+    /// The localhost HTTP endpoint's port, or nil when it's off. Optional, so that settings saved
+    /// before it existed still load.
+    public var metricsServerPort: Int?
 
-    public init(modules: [ModuleConfig], sampleInterval: Double, isCombined: Bool) {
+    public init(modules: [ModuleConfig], sampleInterval: Double, isCombined: Bool, metricsServerPort: Int? = nil) {
         self.modules = modules
         self.sampleInterval = sampleInterval
         self.isCombined = isCombined
+        self.metricsServerPort = metricsServerPort
     }
 
     public static let `default` = PulseSettings(
@@ -103,7 +107,9 @@ public struct PulseSettings: Codable, Equatable, Sendable {
         return PulseSettings(
             modules: result,
             sampleInterval: sampleInterval.clamped(to: Sampler.intervalRange),
-            isCombined: isCombined
+            isCombined: isCombined,
+            // Unprivileged ports only; anything else turns it off.
+            metricsServerPort: metricsServerPort.flatMap { (1024...65535).contains($0) ? $0 : nil }
         )
     }
 }

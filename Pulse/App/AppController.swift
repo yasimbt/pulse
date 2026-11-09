@@ -21,6 +21,8 @@ final class AppController: NSObject, NSWindowDelegate {
     private let database: HistoryDatabase?
     private let history: HistoryStore?
     private let recorder: SessionRecorder?
+    private let metricsServer = MetricsServer()
+    private var metricsServerPort: Int?
 
     override init() {
         let settings = store.settings
@@ -62,6 +64,7 @@ final class AppController: NSObject, NSWindowDelegate {
         }
         store.onChange = { [weak self] settings in self?.apply(settings) }
         statusBar.apply(store.settings)
+        applyMetricsServer(store.settings)
         // Sends the full demand, including the process scans that history needs.
         updateDemand()
 
@@ -74,6 +77,7 @@ final class AppController: NSObject, NSWindowDelegate {
                 statusBar.update(with: store.settings)
                 await history?.record(snapshot)
                 await recorder?.record(snapshot)
+                if metricsServerPort != nil { await metricsServer.update(snapshot) }
             }
         }
     }
@@ -83,7 +87,28 @@ final class AppController: NSObject, NSWindowDelegate {
         await history?.flush()
     }
 
+    /// Starts, moves or stops the localhost endpoint to match settings.
+    private func applyMetricsServer(_ settings: PulseSettings) {
+        guard settings.metricsServerPort != metricsServerPort else { return }
+        metricsServerPort = settings.metricsServerPort
+        let server = metricsServer
+        let port = settings.metricsServerPort
+        Task {
+            if let port {
+                do {
+                    try await server.start(port: UInt16(port))
+                } catch {
+                    Logger(subsystem: PulseInfo.logSubsystem, category: "server")
+                        .error("metrics server couldn't start: \(String(describing: error), privacy: .public)")
+                }
+            } else {
+                await server.stop()
+            }
+        }
+    }
+
     private func apply(_ settings: PulseSettings) {
+        applyMetricsServer(settings)
         statusBar.apply(settings)
         statusBar.update(with: settings)
         updateDemand()
