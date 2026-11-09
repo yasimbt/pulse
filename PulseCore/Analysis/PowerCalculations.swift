@@ -87,7 +87,8 @@ public enum PowerCalculations {
                 kind: kind,
                 watts: (joules[kind] ?? 0) / seconds,
                 activeFraction: coreStates[kind] == nil ? nil : residency.activeFraction,
-                frequencyHz: residency.frequencyHz
+                frequencyHz: residency.frequencyHz,
+                maxFrequencyHz: table.last
             )
         }
         let gpu = gpuStates.map { residency([$0], table: tables.gpu, allowLongerStates: true) }

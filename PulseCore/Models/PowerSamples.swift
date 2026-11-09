@@ -14,12 +14,15 @@ public struct ClusterPower: Sendable, Equatable {
     public let activeFraction: Double?
     /// Average frequency while running, in Hz. Nil when this chip's frequency table is unknown.
     public let frequencyHz: Double?
+    /// The top of the cluster's frequency table, in Hz, for judging how far it has dropped.
+    public let maxFrequencyHz: Double?
 
-    public init(kind: Kind, watts: Double, activeFraction: Double?, frequencyHz: Double?) {
+    public init(kind: Kind, watts: Double, activeFraction: Double?, frequencyHz: Double?, maxFrequencyHz: Double? = nil) {
         self.kind = kind
         self.watts = watts
         self.activeFraction = activeFraction
         self.frequencyHz = frequencyHz
+        self.maxFrequencyHz = maxFrequencyHz
     }
 }
 
@@ -79,12 +82,32 @@ public struct TemperatureReading: Sendable, Equatable, Identifiable {
     }
 }
 
+/// macOS's own thermal pressure, from `ProcessInfo.thermalState`. Coarse and slow to change:
+/// on the M5 Air it reached "fair" about a minute into throttling. See docs/m4-findings.md.
+public enum ThermalState: Int, Sendable, Codable, Comparable {
+    case nominal, fair, serious, critical
+
+    public static func < (lhs: ThermalState, rhs: ThermalState) -> Bool { lhs.rawValue < rhs.rawValue }
+
+    public init(_ state: ProcessInfo.ThermalState) {
+        switch state {
+        case .nominal: self = .nominal
+        case .fair: self = .fair
+        case .serious: self = .serious
+        case .critical: self = .critical
+        @unknown default: self = .serious
+        }
+    }
+}
+
 public struct ThermalSample: Sendable, Equatable {
     /// In the sensor map's order.
     public let readings: [TemperatureReading]
+    public let state: ThermalState?
 
-    public init(readings: [TemperatureReading]) {
+    public init(readings: [TemperatureReading], state: ThermalState? = nil) {
         self.readings = readings
+        self.state = state
     }
 
     public func reading(_ id: String) -> TemperatureReading? {

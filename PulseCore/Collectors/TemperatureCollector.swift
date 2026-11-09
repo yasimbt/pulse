@@ -17,7 +17,7 @@ public actor TemperatureCollector: Collector {
         self.sensors = sensors
         let readings = TemperatureCalculations.readings(sensors.read(), rules: rules)
         guard !readings.isEmpty else { throw CollectorError.unavailable("no known temperature sensors") }
-        return ThermalSample(readings: readings)
+        return ThermalSample(readings: readings, state: ThermalState(ProcessInfo.processInfo.thermalState))
     }
 
     private func open() throws -> HIDTemperatureSensors {
