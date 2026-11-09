@@ -48,6 +48,8 @@ final class AppController: NSObject, NSWindowDelegate {
         }
         store.onChange = { [weak self] settings in self?.apply(settings) }
         statusBar.apply(store.settings)
+        // Sends the full demand, including the process scans that history needs.
+        updateDemand()
 
         let sampler = sampler
         consumer = Task { [weak self] in
@@ -80,7 +82,8 @@ final class AppController: NSObject, NSWindowDelegate {
             modules: Set(store.settings.enabledModules.map(\.kind)),
             processes: openPanel != nil,
             networkProcesses: openPanel?.contains(.network) ?? false,
-            powerDetail: openPanel?.contains(.power) ?? false
+            powerDetail: openPanel?.contains(.power) ?? false,
+            processHistory: history != nil
         )
         let sampler = sampler
         Task { await sampler.setDemand(demand) }

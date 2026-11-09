@@ -1,5 +1,6 @@
 import Foundation
-import GRDB
+// Implementation-only, so that apps and tools linking PulseCore needn't find GRDB's modules.
+@_implementationOnly import GRDB
 
 /// A resolution tier of the history. Each is a table with one row per time `t` (seconds since
 /// 1970) and one column per `SeriesID`, named by its raw value.
@@ -55,7 +56,8 @@ public struct HistoryRow: Sendable, Equatable {
 }
 
 /// The SQLite history file. All access goes through GRDB, which serialises writes.
-public struct HistoryDatabase: Sendable {
+/// A class rather than a struct, so that code using PulseCore needn't see GRDB to know its layout.
+public final class HistoryDatabase: Sendable {
     let writer: any DatabaseWriter
 
     /// Opens or creates the file, in WAL mode so that reads don't wait for writes.
@@ -86,6 +88,9 @@ public struct HistoryDatabase: Sendable {
                     }
                 }
             }
+        }
+        migrator.registerMigration("v2: process snapshots") { db in
+            try createProcessTables(db)
         }
         return migrator
     }
@@ -122,6 +127,7 @@ public struct HistoryDatabase: Sendable {
             for tier in HistoryTier.allCases {
                 try db.execute(sql: "DELETE FROM \(tier.rawValue) WHERE t < ?", arguments: [current - tier.retention])
             }
+            try Self.rollUpAndPruneProcesses(before: current, db)
         }
     }
 

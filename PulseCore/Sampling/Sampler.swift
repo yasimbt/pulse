@@ -9,12 +9,21 @@ public actor Sampler {
         public var networkProcesses: Bool
         /// The E/P split, frequencies, temperatures, system power and fans, which cost more to read.
         public var powerDetail: Bool
+        /// A process scan every 10 s for history, even with every panel closed.
+        public var processHistory: Bool
 
-        public init(modules: Set<ModuleKind>, processes: Bool = false, networkProcesses: Bool = false, powerDetail: Bool = false) {
+        public init(
+            modules: Set<ModuleKind>,
+            processes: Bool = false,
+            networkProcesses: Bool = false,
+            powerDetail: Bool = false,
+            processHistory: Bool = false
+        ) {
             self.modules = modules
             self.processes = processes
             self.networkProcesses = networkProcesses
             self.powerDetail = powerDetail
+            self.processHistory = processHistory
         }
     }
 
@@ -43,6 +52,7 @@ public actor Sampler {
     private var task: Task<Void, Never>?
     private var loggedFailures: Set<MetricID> = []
     private var lastNetworkProcesses: (rows: [NetworkProcessUsage], time: ContinuousClock.Instant)?
+    private var lastProcessScan: ContinuousClock.Instant?
 
     public init(interval: Double, demand: Demand) {
         self.interval = interval.clamped(to: Self.intervalRange)
@@ -100,10 +110,20 @@ public actor Sampler {
             snapshot.thermal = await attempt(temperature)
             snapshot.smc = await attempt(smc)
         }
-        if demand.processes { snapshot.processes = await attempt(processes) }
+        if demand.processes || processHistoryIsDue() {
+            lastProcessScan = clock.now
+            snapshot.processes = await attempt(processes)
+        }
         if demand.networkProcesses { snapshot.networkProcesses = await currentNetworkProcesses() }
         snapshot.selfUsage = await attempt(selfUsage)
         return snapshot
+    }
+
+    /// About 5 ms of CPU per scan on the M5, so 0.05% at one every 10 s.
+    private func processHistoryIsDue() -> Bool {
+        guard demand.processHistory else { return false }
+        guard let lastProcessScan else { return true }
+        return clock.now - lastProcessScan >= .seconds(HistoryStore.processInterval - 0.5)
     }
 
     private func currentNetworkProcesses() async -> [NetworkProcessUsage]? {

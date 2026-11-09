@@ -6,6 +6,8 @@ import os
 /// Failures are logged once and never stop sampling.
 public actor HistoryStore {
     public static let flushInterval: TimeInterval = 30
+    /// SPEC M3: a top-processes snapshot every 10 s, to answer "what spiked at 14:02?".
+    public static let processInterval: TimeInterval = 10
     private static let logger = Logger(subsystem: PulseInfo.logSubsystem, category: "history")
 
     /// `~/Library/Application Support/Pulse/history.sqlite`.
@@ -15,6 +17,8 @@ public actor HistoryStore {
 
     private let database: HistoryDatabase
     private var pending: [HistoryRow] = []
+    private var pendingProcesses: [ProcessSnapshotRow] = []
+    private var lastProcesses: Date?
     private var lastFlush: Date?
     private var loggedFailure = false
 
@@ -23,10 +27,15 @@ public actor HistoryStore {
     }
 
     public func record(_ snapshot: Snapshot) {
+        let now = snapshot.timestamp
+        // With a panel open, processes come every sample; one every 10 s is enough to keep.
+        if let table = snapshot.processes, now.timeIntervalSince(lastProcesses ?? .distantPast) >= Self.processInterval - 0.5 {
+            pendingProcesses += ProcessSnapshotRow.rows(table, at: now)
+            lastProcesses = now
+        }
         let row = HistoryRow(snapshot)
         guard !row.values.isEmpty else { return }
         pending.append(row)
-        let now = snapshot.timestamp
         if let lastFlush, now.timeIntervalSince(lastFlush) < Self.flushInterval { return }
         if lastFlush == nil {
             lastFlush = now
@@ -38,10 +47,13 @@ public actor HistoryStore {
     /// Writes buffered rows and updates the averaged tiers. Called on a timer and at quit.
     public func flush(now: Date = Date()) {
         let rows = pending
+        let processes = pendingProcesses
         pending.removeAll(keepingCapacity: true)
+        pendingProcesses.removeAll(keepingCapacity: true)
         lastFlush = now
         do {
             try database.insert(rows)
+            try database.insertProcesses(processes)
             try database.rollUpAndPrune(now: now)
         } catch {
             if !loggedFailure {
@@ -49,6 +61,15 @@ public actor HistoryStore {
                 Self.logger.error("history write failed: \(String(describing: error), privacy: .public)")
             }
         }
+    }
+
+    /// The busiest processes at a time, including a snapshot not yet written.
+    public func processes(at time: Date, now: Date = Date()) -> [ProcessSnapshotRow] {
+        let buffered = pendingProcesses.filter { $0.time <= time && time.timeIntervalSince($0.time) < 2 * Self.processInterval }
+        if let nearest = buffered.map(\.time).max() {
+            return buffered.filter { $0.time == nearest }.sorted { $0.cpuCores > $1.cpuCores }
+        }
+        return (try? database.processes(at: time, now: now)) ?? []
     }
 
     /// Stored values plus any not yet written, oldest first.
