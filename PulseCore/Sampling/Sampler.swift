@@ -11,6 +11,8 @@ public actor Sampler {
         public var powerDetail: Bool
         /// Ports and the charger, for the Ports panel.
         public var portsDetail: Bool
+        /// The inputs threshold alerts check, every `alertInterval`.
+        public var alerts: Bool
         /// A process scan for history every `HistoryStore.processInterval`, even with every panel closed.
         public var processHistory: Bool
 
@@ -20,6 +22,7 @@ public actor Sampler {
             networkProcesses: Bool = false,
             powerDetail: Bool = false,
             portsDetail: Bool = false,
+            alerts: Bool = false,
             processHistory: Bool = false
         ) {
             self.modules = modules
@@ -27,6 +30,7 @@ public actor Sampler {
             self.networkProcesses = networkProcesses
             self.powerDetail = powerDetail
             self.portsDetail = portsDetail
+            self.alerts = alerts
             self.processHistory = processHistory
         }
     }
@@ -58,6 +62,9 @@ public actor Sampler {
     private var loggedFailures: Set<MetricID> = []
     private var lastNetworkProcesses: (rows: [NetworkProcessUsage], time: ContinuousClock.Instant)?
     private var lastProcessScan: ContinuousClock.Instant?
+    private var lastAlertScan: ContinuousClock.Instant?
+    /// How often alerts' inputs are read when nothing else needs them.
+    public static let alertInterval: Duration = .seconds(10)
 
     public init(interval: Double, demand: Demand) {
         self.interval = interval.clamped(to: Self.intervalRange)
@@ -110,18 +117,10 @@ public actor Sampler {
 
     private func collect() async -> Snapshot {
         var snapshot = Snapshot(timestamp: Date())
-        if demand.modules.contains(.cpu) { snapshot.cpu = await attempt(cpu) }
-        if demand.modules.contains(.memory) { snapshot.memory = await attempt(memory) }
-        if demand.modules.contains(.disk) { snapshot.disk = await attempt(disk) }
-        if demand.modules.contains(.network) { snapshot.network = await attempt(network) }
-        if demand.modules.contains(.battery) { snapshot.battery = await attempt(battery) }
-        if demand.modules.contains(.ports) || demand.portsDetail { snapshot.ports = await attempt(ports) }
-        if demand.modules.contains(.power) || demand.powerDetail { snapshot.power = await attempt(power) }
-        // Shown only in the Power panel for now, so read only while it is open.
-        if demand.powerDetail {
-            snapshot.thermal = await attempt(temperature)
-            snapshot.smc = await attempt(smc)
-        }
+        // Alerts need memory, disk, battery, temperatures and ports, but only every few seconds.
+        let alertScan = alertScanIsDue()
+        if alertScan { lastAlertScan = clock.now }
+        await collectReadings(into: &snapshot, alertScan: alertScan)
         if demand.processes || processHistoryIsDue() {
             lastProcessScan = clock.now
             snapshot.processes = await attempt(processes)
@@ -129,6 +128,27 @@ public actor Sampler {
         if demand.networkProcesses { snapshot.networkProcesses = await currentNetworkProcesses() }
         snapshot.selfUsage = await attempt(selfUsage)
         return snapshot
+    }
+
+    /// Each collector that a module, an open panel or an alert scan needs.
+    private func collectReadings(into snapshot: inout Snapshot, alertScan: Bool) async {
+        if demand.modules.contains(.cpu) { snapshot.cpu = await attempt(cpu) }
+        if demand.modules.contains(.memory) || alertScan { snapshot.memory = await attempt(memory) }
+        if demand.modules.contains(.disk) || alertScan { snapshot.disk = await attempt(disk) }
+        if demand.modules.contains(.network) { snapshot.network = await attempt(network) }
+        if demand.modules.contains(.battery) || alertScan { snapshot.battery = await attempt(battery) }
+        if demand.modules.contains(.ports) || demand.portsDetail || alertScan { snapshot.ports = await attempt(ports) }
+        if demand.modules.contains(.power) || demand.powerDetail { snapshot.power = await attempt(power) }
+        // Temperatures: every sample with the Power panel open or a session recording, and on alert scans.
+        if demand.powerDetail || alertScan { snapshot.thermal = await attempt(temperature) }
+        if demand.powerDetail { snapshot.smc = await attempt(smc) }
+    }
+
+    /// About 1 ms of CPU per scan, mostly temperature sensors.
+    private func alertScanIsDue() -> Bool {
+        guard demand.alerts else { return false }
+        guard let lastAlertScan else { return true }
+        return clock.now - lastAlertScan >= Self.alertInterval
     }
 
     /// About 5 ms of CPU per scan on the M5, so about 0.017% at one every 30 s.

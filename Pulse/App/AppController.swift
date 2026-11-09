@@ -22,6 +22,7 @@ final class AppController: NSObject, NSWindowDelegate {
     private let history: HistoryStore?
     private let recorder: SessionRecorder?
     private let metricsServer = MetricsServer()
+    private let alerts = AlertNotifier()
     private var metricsServerPort: Int?
 
     override init() {
@@ -78,6 +79,7 @@ final class AppController: NSObject, NSWindowDelegate {
                 await history?.record(snapshot)
                 await recorder?.record(snapshot)
                 if metricsServerPort != nil { await metricsServer.update(snapshot) }
+                alerts.check(snapshot, settings: store.settings.alerts ?? .default)
             }
         }
     }
@@ -109,6 +111,7 @@ final class AppController: NSObject, NSWindowDelegate {
 
     private func apply(_ settings: PulseSettings) {
         applyMetricsServer(settings)
+        alerts.settingsChanged(settings.alerts ?? .default)
         statusBar.apply(settings)
         statusBar.update(with: settings)
         updateDemand()
@@ -125,6 +128,7 @@ final class AppController: NSObject, NSWindowDelegate {
             // A session needs frequencies, temperatures and processes every second.
             powerDetail: (openPanel?.contains(.power) ?? false) || model.recordingStart != nil,
             portsDetail: openPanel?.contains(.ports) ?? false,
+            alerts: !(store.settings.alerts ?? .default).enabled.isEmpty,
             processHistory: history != nil
         )
         let sampler = sampler

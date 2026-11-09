@@ -18,3 +18,20 @@ Off by default; Settings → Sharing. Network framework listener bound to `127.0
 `GET /metrics` (Prometheus text 0.0.4) and `/metrics.json`; HEAD is allowed; other paths 404, other
 methods 405, no sample yet 503. It serves the app's latest snapshot, so it adds no sampling and
 covers only the modules in the menu bar.
+
+## Threshold alerts (`PulseCore/Analysis/Alerts.swift`, `Pulse/App/AlertNotifier.swift`)
+Off by default; Settings → Alerts. Each alert must hold for a while before it fires, then stays
+quiet for a cooldown: chip temperature (95 °C for 60 s, 30 min), swap growth (2 GB in 10 minutes,
+30 min), low disk (under 10 GB or 5%, 6 h), battery health (under 80%, 7 days), sustained throttling
+(thermal pressure "serious" for 30 s or "fair" for 3 minutes, 30 min) and charger shortfall (60 s,
+30 min).
+
+- Sustained throttling uses macOS's thermal pressure, not the M4 frequency detector, which needs
+  the per-second detail (about 1.2% CPU). On the M5 Air, pressure reached "fair" about a minute into
+  throttling, so this alert is slower but nearly free.
+- With any alert on, the sampler reads memory, disk, battery, temperatures and ports every 10 s
+  when nothing else needs them (about 1 ms, mostly temperature sensors).
+- A condition has three states: unknown, clear and active. Snapshots between 10 s scans have no
+  temperature, and treating that as "clear" would have reset the 60 s timer every second.
+- Notifications use one identifier per alert kind, so a newer alert replaces an older one of the
+  same kind. Permission is asked for when an alert is first turned on.

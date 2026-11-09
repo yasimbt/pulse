@@ -27,6 +27,12 @@ struct SettingsView: View {
                 }
                 LaunchAtLoginToggle()
             }
+            Section("Alerts") {
+                AlertRows(alerts: Binding(
+                    get: { store.settings.alerts ?? .default },
+                    set: { store.settings.alerts = $0 }
+                ))
+            }
             Section("Sharing") {
                 MetricsServerRows(port: $store.settings.metricsServerPort)
             }
@@ -37,6 +43,47 @@ struct SettingsView: View {
         .formStyle(.grouped)
         .frame(width: 520)
         .fixedSize(horizontal: false, vertical: true)
+    }
+}
+
+/// A switch per alert, with thresholds for the ones that have one.
+private struct AlertRows: View {
+    @Binding var alerts: AlertSettings
+
+    var body: some View {
+        ForEach(AlertKind.allCases, id: \.self) { kind in
+            Toggle(isOn: Binding(
+                get: { alerts.enabled.contains(kind) },
+                set: { isOn in
+                    if isOn { alerts.enabled.insert(kind) } else { alerts.enabled.remove(kind) }
+                }
+            )) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(kind.title)
+                    Text(detail(kind)).font(.caption).foregroundStyle(.secondary)
+                }
+            }
+        }
+        if alerts.enabled.contains(.chipTemperature) {
+            Stepper("Chip temperature: \(Int(alerts.chipCelsius)) °C", value: $alerts.chipCelsius, in: 70...110, step: 5)
+        }
+        if alerts.enabled.contains(.lowDiskSpace) {
+            Stepper("Free space under \(Int(alerts.minimumFreeBytes / 1e9)) GB", value: $alerts.minimumFreeBytes, in: 5e9...200e9, step: 5e9)
+        }
+        Text("Checked every 10 seconds. Each alert waits a while before repeating.")
+            .font(.caption)
+            .foregroundStyle(.secondary)
+    }
+
+    private func detail(_ kind: AlertKind) -> String {
+        switch kind {
+        case .chipTemperature: "When the chip stays at \(Int(alerts.chipCelsius)) °C or more for a minute"
+        case .swapGrowth: "When swap grows by \(MetricFormat.memory(alerts.swapGrowthBytes)) in 10 minutes"
+        case .lowDiskSpace: "When the startup disk has under \(Int(alerts.minimumFreeBytes / 1e9)) GB or 5% free"
+        case .batteryHealth: "When the battery holds under \(MetricFormat.percent(alerts.minimumBatteryHealth)) of its design capacity"
+        case .thermalPressure: "When macOS reports thermal pressure for minutes at a time"
+        case .chargerShortfall: "When the battery drains although a charger is connected"
+        }
     }
 }
 
