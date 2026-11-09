@@ -63,6 +63,8 @@ public actor Sampler {
     public func start() {
         guard task == nil else { return }
         task = Task(priority: .utility) { [weak self] in
+            // `setDemand` passes on changes only, so the starting demand is applied here.
+            await self?.applyPowerDetail()
             // Rates need two readings, so the first pass only sets the baselines.
             _ = await self?.collect()
             while !Task.isCancelled {
@@ -83,6 +85,10 @@ public actor Sampler {
 
     public func setInterval(_ seconds: Double) {
         interval = seconds.clamped(to: Self.intervalRange)
+    }
+
+    private func applyPowerDetail() async {
+        await power.setDetail(demand.powerDetail)
     }
 
     public func setDemand(_ newDemand: Demand) async {
