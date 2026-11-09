@@ -6,6 +6,18 @@ struct SettingsView: View {
     @Bindable var store: SettingsStore
     let model: LiveModel
 
+    /// Edits one rule, creating the rule settings on first use.
+    private func ruleBinding(_ path: WritableKeyPath<RuleSettings, RuleActions>) -> Binding<RuleActions> {
+        Binding(
+            get: { (store.settings.rules ?? .default)[keyPath: path] },
+            set: { actions in
+                var rules = store.settings.rules ?? .default
+                rules[keyPath: path] = actions
+                store.settings.rules = rules
+            }
+        )
+    }
+
     var body: some View {
         Form {
             Section("Modules") {
@@ -27,6 +39,13 @@ struct SettingsView: View {
                 }
                 LaunchAtLoginToggle()
             }
+            Section("Rules") {
+                RuleRow(title: "On battery", actions: ruleBinding(\.onBattery))
+                RuleRow(title: "In Low Power Mode", actions: ruleBinding(\.lowPowerMode))
+                Text("While a rule applies, its sample rate and hidden modules replace yours. The slower rate wins.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
             Section("Alerts") {
                 AlertRows(alerts: Binding(
                     get: { store.settings.alerts ?? .default },
@@ -41,8 +60,43 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
-        .frame(width: 520)
-        .fixedSize(horizontal: false, vertical: true)
+        // A fixed height that fits a laptop screen; the grouped form scrolls inside it.
+        .frame(width: 520, height: 640)
+    }
+}
+
+/// One rule: a slower sample rate and modules to hide while its condition holds.
+private struct RuleRow: View {
+    let title: String
+    @Binding var actions: RuleActions
+
+    var body: some View {
+        LabeledContent(title) {
+            HStack {
+                Picker("Sample rate", selection: $actions.sampleInterval) {
+                    Text("Usual rate").tag(Double?.none)
+                    Text("Every 2 seconds").tag(Double?.some(2))
+                    Text("Every 5 seconds").tag(Double?.some(5))
+                }
+                .labelsHidden()
+                .fixedSize()
+                Menu(hiddenTitle) {
+                    ForEach(ModuleKind.allCases) { kind in
+                        Toggle(kind.title, isOn: Binding(
+                            get: { actions.hiddenModules.contains(kind) },
+                            set: { hide in
+                                if hide { actions.hiddenModules.insert(kind) } else { actions.hiddenModules.remove(kind) }
+                            }
+                        ))
+                    }
+                }
+                .fixedSize()
+            }
+        }
+    }
+
+    private var hiddenTitle: String {
+        actions.hiddenModules.isEmpty ? "Hide nothing" : "Hide \(actions.hiddenModules.count)"
     }
 }
 

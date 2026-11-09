@@ -42,7 +42,8 @@ public struct AlertSettings: Codable, Equatable, Sendable {
     public static let `default` = AlertSettings(
         enabled: [],
         chipCelsius: 95,
-        swapGrowthBytes: 2e9,
+        // 2 GB in the 1024-based units memory is shown in, so that Settings reads "2.0 GB".
+        swapGrowthBytes: 2 * 1_073_741_824,
         minimumFreeBytes: 10e9,
         minimumBatteryHealth: 0.8
     )

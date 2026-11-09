@@ -79,6 +79,7 @@ func run(_ out: String) async throws {
         }
     }
     try await renderHistory(out)
+    try await captureSettings(out, model: model)
     try await benchmarkFullDay(out)
     try await captureHistoryWindow(out, size: NSSize(width: 960, height: 720))
     try await captureHistoryWindow(out, size: NSSize(width: 860, height: 560))
@@ -139,6 +140,30 @@ func captureHistoryWindow(_ out: String, size: NSSize) async throws {
     try await Task.sleep(for: .milliseconds(500))
     print("history window \(Int(size.width))x\(Int(size.height)): fitting \(host.fittingSize)")
     save(host, "\(out)/history-window-\(Int(size.width)).png")
+}
+
+/// The Settings window as AppKit lays it out, with alerts and rules switched on for the picture.
+@MainActor
+func captureSettings(_ out: String, model: LiveModel) async throws {
+    // A throwaway defaults domain, so that the real settings are never touched.
+    let store = SettingsStore(defaults: UserDefaults(suiteName: "com.pulse.preview") ?? .standard)
+    var settings = store.settings
+    settings.alerts = AlertSettings(enabled: [.chipTemperature, .lowDiskSpace], chipCelsius: 95, swapGrowthBytes: 2e9,
+                                    minimumFreeBytes: 10e9, minimumBatteryHealth: 0.8)
+    settings.rules = RuleSettings(onBattery: RuleActions(sampleInterval: 5, hiddenModules: [.power]), lowPowerMode: .none)
+    settings.metricsServerPort = 9466
+    store.settings = settings
+    let host = NSHostingView(rootView: SettingsView(store: store, model: model))
+    host.appearance = NSAppearance(named: .aqua)
+    let size = host.fittingSize
+    let window = NSWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: [.borderless], backing: .buffered, defer: false)
+    window.appearance = NSAppearance(named: .aqua)
+    window.contentView = host
+    host.frame = NSRect(origin: .zero, size: size)
+    host.layoutSubtreeIfNeeded()
+    try await Task.sleep(for: .milliseconds(500))
+    print("settings: \(size)")
+    save(host, "\(out)/settings.png")
 }
 
 /// The history window, from this Mac's real history file. Only reads it.

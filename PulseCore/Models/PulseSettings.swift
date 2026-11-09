@@ -72,15 +72,22 @@ public struct PulseSettings: Codable, Equatable, Sendable {
     public var metricsServerPort: Int?
     /// Nil until first changed; optional for the same reason.
     public var alerts: AlertSettings?
+    public var rules: RuleSettings?
 
     public init(
-        modules: [ModuleConfig], sampleInterval: Double, isCombined: Bool, metricsServerPort: Int? = nil, alerts: AlertSettings? = nil
+        modules: [ModuleConfig],
+        sampleInterval: Double,
+        isCombined: Bool,
+        metricsServerPort: Int? = nil,
+        alerts: AlertSettings? = nil,
+        rules: RuleSettings? = nil
     ) {
         self.modules = modules
         self.sampleInterval = sampleInterval
         self.isCombined = isCombined
         self.metricsServerPort = metricsServerPort
         self.alerts = alerts
+        self.rules = rules
     }
 
     public static let `default` = PulseSettings(
@@ -115,7 +122,8 @@ public struct PulseSettings: Codable, Equatable, Sendable {
             isCombined: isCombined,
             // Unprivileged ports only; anything else turns it off.
             metricsServerPort: metricsServerPort.flatMap { (1024...65535).contains($0) ? $0 : nil },
-            alerts: alerts
+            alerts: alerts,
+            rules: rules
         )
     }
 }

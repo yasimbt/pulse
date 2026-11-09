@@ -35,3 +35,16 @@ quiet for a cooldown: chip temperature (95 °C for 60 s, 30 min), swap growth (2
   temperature, and treating that as "clear" would have reset the 60 s timer every second.
 - Notifications use one identifier per alert kind, so a newer alert replaces an older one of the
   same kind. Permission is asked for when an alert is first turned on.
+
+## Rules (`PulseCore/Analysis/Rules.swift`)
+"On battery" and "In Low Power Mode", each with an optional slower sample rate (2 s or 5 s) and
+modules to hide. `Rules.effective` turns the person's settings and the power situation into the
+settings the app runs with; Settings keeps showing the person's own. When both apply, the slower
+rate wins and hidden modules add up; a rule never speeds sampling up. The power situation comes
+from `IOPSGetProvidingPowerSourceType` (checked every 10 s) and `isLowPowerModeEnabled` (with its
+change notification).
+
+## Settings window
+With Alerts, Rules and Sharing added, the window grew to 1,623 pt, taller than a MacBook Air's
+screen, and didn't scroll. It now has a fixed height of 640 pt and the grouped form scrolls.
+`SettingsStore` takes the `UserDefaults` to use, so previews write to a throwaway domain.

@@ -23,10 +23,17 @@ final class AppController: NSObject, NSWindowDelegate {
     private let recorder: SessionRecorder?
     private let metricsServer = MetricsServer()
     private let alerts = AlertNotifier()
+    /// On battery or in Low Power Mode, rules can change the settings that run.
+    private var powerContext = PowerContext.current()
+    private var lastPowerCheck = Date()
+    private var powerStateObserver: NSObjectProtocol?
+
+    /// The person's settings, changed by any rule that applies now. Settings shows their own.
+    private var effective: PulseSettings { Rules.effective(store.settings, context: powerContext) }
     private var metricsServerPort: Int?
 
     override init() {
-        let settings = store.settings
+        let settings = Rules.effective(store.settings, context: PowerContext.current())
         sampler = Sampler(
             interval: settings.sampleInterval,
             demand: Sampler.Demand(modules: Set(settings.enabledModules.map(\.kind)))
@@ -63,9 +70,14 @@ final class AppController: NSObject, NSWindowDelegate {
             self?.openPanel = kinds
             self?.updateDemand()
         }
-        store.onChange = { [weak self] settings in self?.apply(settings) }
-        statusBar.apply(store.settings)
+        store.onChange = { [weak self] _ in self?.applyEffective() }
+        statusBar.apply(effective)
         applyMetricsServer(store.settings)
+        powerStateObserver = NotificationCenter.default.addObserver(
+            forName: .NSProcessInfoPowerStateDidChange, object: nil, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.checkPowerContext() }
+        }
         // Sends the full demand, including the process scans that history needs.
         updateDemand()
 
@@ -74,8 +86,10 @@ final class AppController: NSObject, NSWindowDelegate {
             await sampler.start()
             for await snapshot in sampler.snapshots {
                 guard let self else { return }
-                model.ingest(snapshot, enabled: store.settings.enabledModules.map(\.kind))
-                statusBar.update(with: store.settings)
+                if snapshot.timestamp.timeIntervalSince(lastPowerCheck) >= 10 { checkPowerContext() }
+                let settings = effective
+                model.ingest(snapshot, enabled: settings.enabledModules.map(\.kind))
+                statusBar.update(with: settings)
                 await history?.record(snapshot)
                 await recorder?.record(snapshot)
                 if metricsServerPort != nil { await metricsServer.update(snapshot) }
@@ -109,6 +123,19 @@ final class AppController: NSObject, NSWindowDelegate {
         }
     }
 
+    /// Re-applies settings when the power situation changes a rule's outcome.
+    private func checkPowerContext() {
+        lastPowerCheck = Date()
+        let context = PowerContext.current()
+        guard context != powerContext else { return }
+        powerContext = context
+        applyEffective()
+    }
+
+    private func applyEffective() {
+        apply(effective)
+    }
+
     private func apply(_ settings: PulseSettings) {
         applyMetricsServer(settings)
         alerts.settingsChanged(settings.alerts ?? .default)
@@ -122,7 +149,7 @@ final class AppController: NSObject, NSWindowDelegate {
     /// Process scans run only while a panel is open, and `nettop` only while Network is showing.
     private func updateDemand() {
         let demand = Sampler.Demand(
-            modules: Set(store.settings.enabledModules.map(\.kind)),
+            modules: Set(effective.enabledModules.map(\.kind)),
             processes: openPanel != nil || model.recordingStart != nil,
             networkProcesses: openPanel?.contains(.network) ?? false,
             // A session needs frequencies, temperatures and processes every second.
