@@ -16,6 +16,31 @@ public enum Timeline {
         return 180
     }
 
+    /// Steps the time axis can use, in seconds: round minutes, hours and days.
+    static let tickSteps: [TimeInterval] = [
+        60, 300, 600, 900, 1800, 3600, 7200, 10800, 21600, 43200, 86400, 2 * 86400, 5 * 86400, 7 * 86400
+    ]
+
+    /// Round times for the time axis: the smallest step giving at most `maxCount` ticks, aligned to
+    /// the local clock. A tick within half a step of the right edge is left out, because its label
+    /// wouldn't fit there and the chart would drop it, leaving a bare gridline.
+    public static func ticks(in range: ClosedRange<Date>, maxCount: Int = 6, timeZone: TimeZone = .current) -> [Date] {
+        let span = range.upperBound.timeIntervalSince(range.lowerBound)
+        guard span > 0 else { return [] }
+        let step = tickSteps.first { span / $0 <= Double(maxCount) } ?? tickSteps[tickSteps.count - 1]
+        // Shifted into local time, so that hour and day ticks fall on the local clock's round values.
+        let offset = TimeInterval(timeZone.secondsFromGMT(for: range.lowerBound))
+        let localStart = range.lowerBound.timeIntervalSince1970 + offset
+        var tick = (localStart / step).rounded(.up) * step - offset
+        let last = range.upperBound.timeIntervalSince1970 - step / 2
+        var result: [Date] = []
+        while tick <= last {
+            result.append(Date(timeIntervalSince1970: tick))
+            tick += step
+        }
+        return result
+    }
+
     /// Splits points wherever consecutive ones are further apart than `maxGap`, so that a line
     /// isn't drawn straight across a gap.
     public static func segments(_ points: [TimedValue], maxGap: TimeInterval) -> [[TimedValue]] {

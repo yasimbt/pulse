@@ -47,3 +47,22 @@ private func points(_ seconds: [Int]) -> [TimedValue] {
     #expect(Timeline.gapThreshold(forSpan: 86400) == 60)
     #expect(Timeline.gapThreshold(forSpan: 7 * 86400) == 180)
 }
+
+@Test func axisTicksAreRoundTimesAwayFromTheRightEdge() throws {
+    let utc = try #require(TimeZone(identifier: "UTC"))
+    // 1 h ending at 22:05:20 UTC: 10 min steps, the smallest giving at most six ticks. 22:00 is more
+    // than half a step from the edge, so it stays.
+    let end = Date(timeIntervalSince1970: 1_800_000_000 + 22 * 3600 + 320)
+    let ticks = Timeline.ticks(in: end.addingTimeInterval(-3600)...end, timeZone: utc)
+    let minutes = ticks.map { Int($0.timeIntervalSince1970.truncatingRemainder(dividingBy: 3600)) / 60 }
+    #expect(minutes == [10, 20, 30, 40, 50, 0])
+    // Ending at 22:02, a 22:00 tick would sit 2 minutes from the edge and lose its label, so it's left out.
+    let close = Date(timeIntervalSince1970: 1_800_000_000 + 22 * 3600 + 120)
+    let closeMinutes = Timeline.ticks(in: close.addingTimeInterval(-3600)...close, timeZone: utc)
+        .map { Int($0.timeIntervalSince1970.truncatingRemainder(dividingBy: 3600)) / 60 }
+    #expect(closeMinutes == [10, 20, 30, 40, 50])
+    // 30 days: 5-day steps, at most six of them.
+    let month = Timeline.ticks(in: end.addingTimeInterval(-30 * 86400)...end, timeZone: utc)
+    #expect(month.count <= 6 && month.count >= 5)
+    #expect(zip(month, month.dropFirst()).allSatisfy { $1.timeIntervalSince($0) == 5 * 86400 })
+}

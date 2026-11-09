@@ -95,6 +95,14 @@ struct TimelineChart: View {
                 }
             }
             .chartXScale(domain: model.range)
+            .chartXAxis {
+                // Round times chosen by Pulse, none so close to the right edge that its label is dropped.
+                AxisMarks(values: Timeline.ticks(in: model.range)) { _ in
+                    AxisGridLine()
+                    AxisTick()
+                    AxisValueLabel(format: timeFormat)
+                }
+            }
             .chartYScale(domain: yDomain)
             .chartXSelection(value: $model.selection)
             .chartYAxis {
@@ -110,9 +118,15 @@ struct TimelineChart: View {
             }
             .chartLegend(group.lines.count > 1 ? .visible : .hidden)
             .frame(height: 110)
+            .padding(.trailing, 8)
             .accessibilityElement()
             .accessibilityLabel("\(group.id) history")
         }
+    }
+
+    /// Hours and minutes up to a day; dates beyond, where the time of day means little.
+    private var timeFormat: Date.FormatStyle {
+        model.span > 86400 ? .dateTime.day().month(.abbreviated) : .dateTime.hour().minute()
     }
 
     /// Each line is split where its full data has a gap, so that it isn't drawn across time with no

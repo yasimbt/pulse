@@ -79,6 +79,8 @@ func run(_ out: String) async throws {
     }
     try await renderHistory(out)
     try await benchmarkFullDay(out)
+    try await captureHistoryWindow(out, size: NSSize(width: 960, height: 720))
+    try await captureHistoryWindow(out, size: NSSize(width: 860, height: 560))
 }
 
 /// M3 acceptance: a full day of synthetic history, stored the way a day of sampling would leave it,
@@ -115,6 +117,27 @@ func benchmarkFullDay(_ out: String) async throws {
         try rep.representation(using: .png, properties: [:])?.write(to: URL(fileURLWithPath: "\(out)/history-full-day.png"))
     }
     try? FileManager.default.removeItem(at: url)
+}
+
+/// The whole history window as AppKit lays it out, in a borderless offscreen window at the size
+/// the app opens it with. Unlike ImageRenderer, this draws scroll views and system controls.
+@MainActor
+func captureHistoryWindow(_ out: String, size: NSSize) async throws {
+    let store = HistoryStore(database: try HistoryDatabase.open(at: HistoryStore.defaultURL))
+    let model = HistoryModel(store: store)
+    try await Task.sleep(for: .seconds(2))
+    model.selection = Date().addingTimeInterval(-120)
+    try await Task.sleep(for: .milliseconds(600))
+    let host = NSHostingView(rootView: HistoryView(model: model))
+    host.appearance = NSAppearance(named: .aqua)
+    let window = NSWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: [.borderless], backing: .buffered, defer: false)
+    window.appearance = NSAppearance(named: .aqua)
+    window.contentView = host
+    host.frame = NSRect(origin: .zero, size: size)
+    host.layoutSubtreeIfNeeded()
+    try await Task.sleep(for: .milliseconds(500))
+    print("history window \(Int(size.width))x\(Int(size.height)): fitting \(host.fittingSize)")
+    save(host, "\(out)/history-window-\(Int(size.width)).png")
 }
 
 /// The history window, from this Mac's real history file. Only reads it.
