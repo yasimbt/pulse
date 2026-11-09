@@ -71,6 +71,27 @@ struct HistoryChart: View {
         .accessibilityElement()
         .accessibilityLabel("\(title), last 10 minutes")
         .accessibilityValue(summary(points))
+        .accessibilityChartDescriptor(chartDescriptor(points, now: now))
+    }
+
+    /// For VoiceOver's audio graph of this chart.
+    private func chartDescriptor(_ points: [Point], now: Date) -> TimeChartDescriptor {
+        let scale = scale
+        return TimeChartDescriptor(
+            title: title,
+            lines: lines.map { line in
+                .init(name: line.name, points: points.filter { $0.line == line.name }.map { TimedValue(time: $0.time, value: $0.value) })
+            },
+            range: now.addingTimeInterval(-MetricHistory.window)...now,
+            valueRange: yDomain(points),
+            format: { value in
+                switch scale {
+                case .fraction: MetricFormat.percent(value)
+                case .rate: MetricFormat.compactRate(value)
+                case .watts: MetricFormat.watts(value)
+                }
+            }
+        )
     }
 
     private func chartPoints(now: Date) -> [Point] {

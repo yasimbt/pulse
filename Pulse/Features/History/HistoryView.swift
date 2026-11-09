@@ -159,6 +159,13 @@ struct TimelineChart: View {
             .padding(.trailing, 8)
             .accessibilityElement()
             .accessibilityLabel("\(group.id) history")
+            .accessibilityChartDescriptor(TimeChartDescriptor(
+                title: group.id,
+                lines: group.lines.map { .init(name: $0.name, points: model.drawn[$0.series] ?? []) },
+                range: model.range,
+                valueRange: yDomain,
+                format: { [scale = group.scale] in HistoryFormat.value($0, scale) }
+            ))
         }
     }
 

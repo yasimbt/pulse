@@ -19,3 +19,12 @@ through. While it shows, the sampler adds CPU, memory and power detail (about 1-
 `HotKey` now takes a shortcut with its own identifier, and each handler checks the identifier of the
 pressed key: Carbon delivers every registered hot key to every handler in the app, so without the
 check ⌃⌥⌘H would also have started a recording.
+
+## VoiceOver (`Pulse/Features/Shared/ChartAccessibility.swift`)
+Every chart (panel 10-minute charts, history timeline, session charts) is one accessibility element
+with a label, a spoken summary of each line's latest value and peak, and an `AXChartDescriptor`
+(through `accessibilityChartDescriptor`), so VoiceOver's audio graph can play it and step through its
+points. The descriptor uses the same thinned points as the drawing (at most 600 per line) and the
+chart's own value formatting. Other checks: icon-only buttons (history earlier/later) have labels,
+module tabs carry the selected trait, menu-bar items and the HUD have labels, and metric rows read
+as one sentence. Not yet checked by a VoiceOver user on screen.

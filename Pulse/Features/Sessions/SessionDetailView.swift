@@ -126,6 +126,15 @@ struct SessionChart: View {
             .padding(.trailing, 8)
             .accessibilityElement()
             .accessibilityLabel("\(kind.title) during the session")
+            .accessibilityChartDescriptor(TimeChartDescriptor(
+                title: kind.title,
+                lines: kind.lines.map { line in
+                    .init(name: line.name, points: points.filter { $0.line == line.name }.map { TimedValue(time: $0.time, value: $0.value) })
+                },
+                range: session.summary.start...max(session.summary.end, session.summary.start.addingTimeInterval(1)),
+                valueRange: kind.fixedDomain ?? 0...max(points.map(\.value).max() ?? 1, 1) * 1.1,
+                format: kind.format
+            ))
         }
     }
 
