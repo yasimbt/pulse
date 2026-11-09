@@ -91,3 +91,32 @@ public struct ThermalSample: Sendable, Equatable {
         readings.first { $0.id == id }
     }
 }
+
+public struct FanReading: Sendable, Equatable, Identifiable {
+    public let index: Int
+    public let rpm: Double
+    public let minimumRPM: Double?
+    public let maximumRPM: Double?
+
+    public var id: Int { index }
+
+    public init(index: Int, rpm: Double, minimumRPM: Double?, maximumRPM: Double?) {
+        self.index = index
+        self.rpm = rpm
+        self.minimumRPM = minimumRPM
+        self.maximumRPM = maximumRPM
+    }
+}
+
+public struct SMCSample: Sendable, Equatable {
+    /// Whole-system power (SMC key PSTR): CPU, GPU, display, memory, storage and the rest. An
+    /// instantaneous reading, so it jumps more than the averaged CPU and GPU figures.
+    public let systemWatts: Double?
+    /// Empty on a fanless Mac.
+    public let fans: [FanReading]
+
+    public init(systemWatts: Double?, fans: [FanReading]) {
+        self.systemWatts = systemWatts
+        self.fans = fans
+    }
+}

@@ -5,6 +5,7 @@ import SwiftUI
 struct PowerDetails: View {
     let sample: PowerSample?
     let thermal: ThermalSample?
+    let smc: SMCSample?
     /// The model's running energy total, used for "since opened".
     let energyJoules: Double?
     /// The total when this panel appeared. Views are rebuilt each time the panel opens.
@@ -13,6 +14,9 @@ struct PowerDetails: View {
     var body: some View {
         if let sample, let cpu = sample.cpuWatts {
             VStack(alignment: .leading, spacing: 4) {
+                if let system = smc?.systemWatts {
+                    MetricRow("Whole Mac", MetricFormat.watts(system))
+                }
                 MetricRow("CPU and GPU", MetricFormat.watts(sample.totalWatts))
                 MetricRow("CPU", MetricFormat.watts(cpu))
                 ForEach(sample.clusters, id: \.kind) { cluster in
@@ -31,6 +35,13 @@ struct PowerDetails: View {
                     Text("Temperatures").font(.subheadline.weight(.semibold)).padding(.top, 6)
                     ForEach(thermal.readings) { reading in
                         MetricRow(reading.title, MetricFormat.temperature(reading.celsius))
+                    }
+                }
+                // A fanless Mac has no fans to list, so the section is left out.
+                if let fans = smc?.fans, !fans.isEmpty {
+                    Text("Fans").font(.subheadline.weight(.semibold)).padding(.top, 6)
+                    ForEach(fans) { fan in
+                        MetricRow(fans.count > 1 ? "Fan \(fan.index + 1)" : "Fan", MetricFormat.rpm(fan.rpm))
                     }
                 }
             }

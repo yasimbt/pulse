@@ -143,3 +143,18 @@ No sensor is identified as the GPU yet, so no GPU temperature is shown.
 for unknown models: chip hottest and average (PMU tdie), SSD and battery. Readings outside 0-130 °C
 are dropped. Only mapped sensors are opened. Temperatures show in the Power panel and are read only
 while it is open.
+
+## SMC: fans and whole-system power (`Tools/spikes/smc`)
+The AppleSMC user client takes an 80-byte `SMCKeyData_t` through selector 2, without root. Swift
+does not pad a nested struct the way C does: `keyInfo` must be padded to 12 bytes by hand, or
+`result` lands at offset 37 instead of 40 and every call fails with `kIOReturnBadArgument`.
+
+- **Fans:** the M5 MacBook Air has none. `FNum` is absent, and none of its 2,432 keys starts with
+  "F". Fan RPM is read only when `FNum` exists, so the Fans section is hidden here. It is untested
+  on a Mac with fans.
+- **PSTR, whole-system power:** 3.1-3.2 W idle (one spike to 10.4 W), 26.2-27.1 W with 4 busy loops,
+  when CLPC reported 18.4 W of CPU. The rest is the display, memory, storage and so on. It is an
+  instantaneous reading, so it is shown in the Power panel as "Whole Mac" rather than in the menu
+  bar. 0.18 ms per read.
+- **PPBR** follows PSTR on battery (power drawn from the battery). **PHPS** matched CLPC CPU watts
+  under load (18.4 W) but is noisy at idle. Neither is used yet.

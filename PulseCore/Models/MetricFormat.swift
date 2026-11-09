@@ -56,6 +56,10 @@ public enum MetricFormat {
         return fixed(wattHours, digits: wattHours < 100 ? 1 : 0) + " Wh"
     }
 
+    public static func rpm(_ value: Double) -> String {
+        "\(Int(value.rounded())) rpm"
+    }
+
     public static func temperature(_ celsius: Double) -> String {
         "\(Int(celsius.rounded())) °C"
     }

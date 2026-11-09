@@ -130,6 +130,7 @@ public struct Snapshot: Sendable, Equatable {
     public var selfUsage: SelfUsage?
     public var power: PowerSample?
     public var thermal: ThermalSample?
+    public var smc: SMCSample?
 
     public init(timestamp: Date) {
         self.timestamp = timestamp

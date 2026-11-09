@@ -16,7 +16,7 @@ func run(_ out: String) async throws {
     _ = NSApplication.shared
     let model = LiveModel()
     let cpu = CPUCollector(), mem = MemoryCollector(), disk = DiskCollector(), net = NetworkCollector()
-    let bat = BatteryCollector(), procs = ProcessCollector(), power = PowerCollector(), temperature = TemperatureCollector()
+    let bat = BatteryCollector(), procs = ProcessCollector(), power = PowerCollector(), temperature = TemperatureCollector(), smc = SMCCollector()
     await power.setDetail(true)
     // A few samples, so that charts and "since opened" have something to show.
     for index in 0..<6 {
@@ -25,6 +25,7 @@ func run(_ out: String) async throws {
         snap.network = try await net.sample(); snap.battery = try? await bat.sample(); snap.processes = try await procs.sample()
         snap.power = try? await power.sample()
         snap.thermal = try? await temperature.sample()
+        snap.smc = try? await smc.sample()
         if index > 0 { model.ingest(snap, enabled: ModuleKind.allCases) }
         try await Task.sleep(for: .seconds(1))
     }
