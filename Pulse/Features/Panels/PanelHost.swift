@@ -5,6 +5,8 @@ struct PanelActions {
     let openSettings: () -> Void
     let quit: () -> Void
     let openActivityMonitor: () -> Void
+    /// Nil when history isn't available, which hides the button.
+    var openHistory: (() -> Void)?
 }
 
 /// Popover content: one module, or a picker when the combined item holds several.
@@ -32,6 +34,9 @@ struct PanelHost: View {
             Divider()
             HStack {
                 Button("Activity Monitor", action: actions.openActivityMonitor)
+                if let openHistory = actions.openHistory {
+                    Button("History…", action: openHistory)
+                }
                 Spacer()
                 Button("Settings…", action: actions.openSettings)
                 Button("Quit", action: actions.quit)

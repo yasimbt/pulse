@@ -42,4 +42,23 @@ class so that clients never need its layout, removes that.
 ## Budget decision (developer, 2026-11-09)
 Process snapshots every 30 s instead of 10 s, and menu-bar Power every 3 s instead of 2 s. Combined
 item with Power and history, Release, panels closed: 0.520% over 252 s (one clean run; two other
-runs had a Pulse window open and are excluded). Still slightly over 0.5%; needs more clean runs.
+runs had a Pulse window open and are excluded). Two more clean runs: 0.458% and 0.500% (a third was excluded because the Mac slept). Average of the
+three clean runs: 0.493%, just under the 0.5% target, with little margin.
+
+## History window
+- Opened with "History…" in any panel's footer. One chart per metric group (CPU, memory, power,
+  network, disk, battery) on a shared time axis; groups with no data in range are hidden.
+- Zoom: 1 h, 6 h, 24 h, 7 d and 30 d buttons, or pinch on the trackpad (5 min to 30 days).
+  Scrubber: a slider moves the range back through the last 30 days. "Now" returns to the present.
+- Crosshair: click or drag on any chart. The side panel lists every value at that moment and the
+  nearest stored process snapshot.
+- Gaps (Mac asleep or off, or Pulse not running) are shaded, and lines break there. Gaps are found
+  in the full data, then lines are split only where a real gap falls between two thinned points;
+  splitting by the spacing of thinned points broke every line into dots at 24 h.
+- Each series is thinned to 600 points for drawing, keeping each bucket's peak so that spikes stay
+  visible. Values under the crosshair come from the full data.
+
+**Performance (acceptance: 24 h renders in < 300 ms):** a full synthetic day, inserted as 86,400
+one-second rows and averaged and pruned by the store as a real day would be: 13,050 points read in
+23 ms and drawn by `ImageRenderer` in 85 ms, about 110 ms in total
+(`Tools/spikes/render-preview`, `benchmarkFullDay`). The window also shows its own load time.

@@ -54,7 +54,7 @@ func run(_ out: String) async throws {
         }
     }
 
-    let actions = PanelActions(openSettings: {}, quit: {}, openActivityMonitor: {})
+    let actions = PanelActions(openSettings: {}, quit: {}, openActivityMonitor: {}, openHistory: {})
     for kind in ModuleKind.allCases {
         let rest = ModuleKind.allCases.filter { $0 != kind }
         let host = NSHostingView(rootView: PanelHost(kinds: [kind] + rest, model: model, actions: actions))
@@ -75,6 +75,78 @@ func run(_ out: String) async throws {
         if let image = renderer.nsImage, let tiff = image.tiffRepresentation, let rep = NSBitmapImageRep(data: tiff) {
             try rep.representation(using: .png, properties: [:])?.write(to: URL(fileURLWithPath: "\(out)/tabs-\(kinds.count)-\(kinds[0].rawValue).png"))
             print("tabs \(kinds.count): \(image.size)")
+        }
+    }
+    try await renderHistory(out)
+    try await benchmarkFullDay(out)
+}
+
+/// M3 acceptance: a full day of synthetic history, stored the way a day of sampling would leave it,
+/// then loaded and drawn at 24 h. Uses a temporary file.
+@MainActor
+func benchmarkFullDay(_ out: String) async throws {
+    let url = FileManager.default.temporaryDirectory.appending(path: "pulse-day-\(UUID().uuidString).sqlite")
+    let database = try HistoryDatabase.open(at: url)
+    let now = Date()
+    let rows = (0..<86_400).map { second -> HistoryRow in
+        let wave = (sin(Double(second) / 600) + 1) / 2
+        return HistoryRow(time: now.addingTimeInterval(Double(second - 86_400)), values: [
+            .cpuTotal: 0.1 + 0.6 * wave, .memoryUsed: 0.7, .powerCPU: 1 + 15 * wave, .powerGPU: 0.2,
+            .networkDown: 1e6 * wave, .networkUp: 2e5, .diskRead: 3e6 * wave, .diskWrite: 1e6, .batteryCharge: 0.9 - 0.5 * Double(second) / 86_400
+        ])
+    }
+    try database.insert(rows)
+    try database.rollUpAndPrune(now: now)
+    let history = HistoryModel(store: HistoryStore(database: database))
+    history.span = 86_400
+    try await Task.sleep(for: .seconds(2))
+    let clock = ContinuousClock()
+    let started = clock.now
+    let view = VStack(alignment: .leading, spacing: 16) {
+        ForEach(history.visibleGroups) { TimelineChart(group: $0, model: history) }
+    }
+    .padding(12).frame(width: 700).background(Color.white)
+    let renderer = ImageRenderer(content: view)
+    renderer.scale = 2
+    let image = renderer.nsImage
+    let points = history.loaded.values.map(\.count).reduce(0, +)
+    print("full day: \(points) points loaded in \(Int(history.lastLoadMilliseconds ?? -1)) ms, drawn in \(clock.now - started)")
+    if let image, let tiff = image.tiffRepresentation, let rep = NSBitmapImageRep(data: tiff) {
+        try rep.representation(using: .png, properties: [:])?.write(to: URL(fileURLWithPath: "\(out)/history-full-day.png"))
+    }
+    try? FileManager.default.removeItem(at: url)
+}
+
+/// The history window, from this Mac's real history file. Only reads it.
+@MainActor
+func renderHistory(_ out: String) async throws {
+    let store = HistoryStore(database: try HistoryDatabase.open(at: HistoryStore.defaultURL))
+    for (name, span) in [("1h", 3600.0), ("24h", 86400.0)] {
+        let history = HistoryModel(store: store)
+        history.span = span
+        try await Task.sleep(for: .seconds(2))
+        history.selection = Date().addingTimeInterval(-120)
+        try await Task.sleep(for: .milliseconds(600))
+        // ImageRenderer leaves ScrollView contents blank, so the charts are drawn without one.
+        let view = VStack(alignment: .leading, spacing: 16) {
+            ForEach(history.visibleGroups) { TimelineChart(group: $0, model: history) }
+        }
+        .padding(12).frame(width: 700).background(Color.white)
+        if let time = history.selection {
+            let values = HistoryModel.groups.flatMap { group in
+                group.lines.map { "\(group.id) \(group.lines.count > 1 ? $0.name : "")=\(history.value(of: $0.series, at: time).map { HistoryFormat.value($0, group.scale) } ?? "-")" }
+            }
+            print("readout at \(time.formatted(date: .omitted, time: .standard)): \(values.joined(separator: ", "))")
+            print("processes: \(history.processes.prefix(5).map { "\($0.name) \(MetricFormat.cores($0.cpuCores))" }.joined(separator: ", "))")
+        }
+        let clock = ContinuousClock()
+        let started = clock.now
+        let renderer = ImageRenderer(content: view)
+        renderer.scale = 1
+        let image = renderer.nsImage
+        print("history \(name): load \(Int(history.lastLoadMilliseconds ?? -1)) ms, render \(clock.now - started)")
+        if let image, let tiff = image.tiffRepresentation, let rep = NSBitmapImageRep(data: tiff) {
+            try rep.representation(using: .png, properties: [:])?.write(to: URL(fileURLWithPath: "\(out)/history-\(name).png"))
         }
     }
 }

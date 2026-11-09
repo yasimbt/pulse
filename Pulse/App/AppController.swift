@@ -12,6 +12,7 @@ final class AppController: NSObject, NSWindowDelegate {
     private let statusBar: StatusBarController
     private var openPanel: Set<ModuleKind>?
     private var settingsWindow: NSWindow?
+    private var historyWindow: NSWindow?
     private var consumer: Task<Void, Never>?
     /// Nil when the database can't be opened, in which case Pulse runs without history.
     private let history: HistoryStore?
@@ -40,7 +41,8 @@ final class AppController: NSObject, NSWindowDelegate {
             openActivityMonitor: {
                 let url = URL(fileURLWithPath: "/System/Applications/Utilities/Activity Monitor.app")
                 NSWorkspace.shared.openApplication(at: url, configuration: NSWorkspace.OpenConfiguration())
-            }
+            },
+            openHistory: history == nil ? nil : { [weak self] in self?.showHistory() }
         )
         statusBar.onPanelChange = { [weak self] kinds in
             self?.openPanel = kinds
@@ -105,8 +107,28 @@ final class AppController: NSObject, NSWindowDelegate {
         settingsWindow?.makeKeyAndOrderFront(nil)
     }
 
-    /// Dropping the window also stops its views from redrawing every sample.
+    private func showHistory() {
+        statusBar.closePanel()
+        guard let history else { return }
+        if historyWindow == nil {
+            let view = HistoryView(model: HistoryModel(store: history))
+            let window = NSWindow(contentViewController: NSHostingController(rootView: view))
+            window.title = "\(PulseInfo.appName) History"
+            window.styleMask = [.titled, .closable, .miniaturizable, .resizable]
+            window.isReleasedWhenClosed = false
+            window.delegate = self
+            window.setContentSize(NSSize(width: 960, height: 720))
+            window.center()
+            historyWindow = window
+        }
+        NSApp.activate()
+        historyWindow?.makeKeyAndOrderFront(nil)
+    }
+
+    /// Dropping a window also frees its views and, for history, its loaded data.
     func windowWillClose(_ notification: Notification) {
-        settingsWindow = nil
+        guard let window = notification.object as? NSWindow else { return }
+        if window === settingsWindow { settingsWindow = nil }
+        if window === historyWindow { historyWindow = nil }
     }
 }
