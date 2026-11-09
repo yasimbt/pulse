@@ -15,7 +15,7 @@ You are building **Pulse**, a native macOS menu-bar system monitor for Apple Sil
 5. Add unit tests for every parser and calculation, using recorded fixtures.
 6. Commit after each working step. Use Conventional Commits (`feat:`, `fix:`, `perf:`, `refactor:`, `test:`, `docs:`, `build:`, `chore:`, with an optional scope such as `feat(power):`). Summary in the imperative, lower case. Run `make test` and `make lint` before committing. Don't commit build products.
 7. If something can't be done (an API isn't exposed on this chip), document it in `docs/` and hide the feature rather than faking data.
-8. Tag each accepted milestone: M1 is `v0.1.0`, M2 is `v0.2.0`, and so on.
+8. Tag each accepted milestone: M1 is `v0.1.0`, M2 is `v0.2.0`, and so on. Set `MARKETING_VERSION` in `project.yml` to match and bump `CURRENT_PROJECT_VERSION` in the commit the tag points at.
 
 ## Commands
 ```bash
