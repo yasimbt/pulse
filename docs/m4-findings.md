@@ -56,3 +56,16 @@ Metal GPU load, 30 s cooling.
 - Only 227 samples in 300 s: under full load the utility-priority sampler sometimes ran late. Energy
   uses the real gaps, so it's unaffected; averages are per sample, so they're slightly less exact
   under extreme load.
+
+## M4 acceptance
+| Spec item | Status |
+|---|---|
+| Record button in the panel, with a global hotkey | Done: Record/Stop with elapsed time; ⌃⌥⌘R. |
+| Summary: duration; peak and average CPU/GPU usage and watts; energy; peak temperatures; throttling time; top processes | Done. ANE omitted: its counter isn't verified yet. |
+| Throttling detector, shown as bands on the charts | Done: rule calibrated on the M5 Air; orange bands on every session chart. |
+| Compare two sessions; export JSON/CSV | Done. |
+| **Accept: a 5-minute stress/build run produces a correct summary** | **Passed:** acceptance run above (energy within 0.15% of the Mac's counter), and a real build recorded by the developer in the app. |
+| **Accept: a forced thermal load produces throttle bands** | **Passed:** one period, 49-271 s, for a load from about 32 s to 272 s. |
+
+Accepted by the developer on 2026-11-09 and tagged v0.4.0. 92 tests pass; lint is clean.
+Not yet measured: Pulse's own CPU cost while recording (expected 1-2%, like the open Power panel).
