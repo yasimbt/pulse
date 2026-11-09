@@ -62,3 +62,26 @@ three clean runs: 0.493%, just under the 0.5% target, with little margin.
 one-second rows and averaged and pruned by the store as a real day would be: 13,050 points read in
 23 ms and drawn by `ImageRenderer` in 85 ms, about 110 ms in total
 (`Tools/spikes/render-preview`, `benchmarkFullDay`). The window also shows its own load time.
+
+## Window fixes after review
+- The rightmost time label was dropped because Swift Charts' automatic ticks put one too close to
+  the edge. Pulse now picks round, locally aligned tick times (`Timeline.ticks`) and leaves out any
+  within half a step of the right edge.
+- Chart titles sat on top of the "100%" axis label. Each title now has its own row with the newest
+  value beside it.
+- The bare slider wasn't clear. Earlier/later buttons step by half a range, a label shows the visible
+  range, and the scrubber is labelled from "30 days ago" to "Now". Confirmed by the developer.
+
+## M3 acceptance
+| Spec item | Status |
+|---|---|
+| GRDB store with downsampling, retention and migrations | Done: raw 1 h, 10 s for 24 h, 1 min for 30 days; migrations v1 and v2. |
+| History window: zoomable timeline, scrubber, crosshair with every value at T | Done. Zoom by range or pinch; earlier/later, "Now" and a scrubber; crosshair readout. |
+| Top-processes snapshot | Done every 30 s (spec said 10 s; changed for the CPU budget by the developer). |
+| Survives restarts; gap marker for sleep or off | Done. Normal quit writes the buffer; gaps are shaded and lines break. |
+| **Accept: database < 200 MB after 30 days** | **Passed: 59 MB with every table full.** |
+| **Accept: timeline renders 24 h in < 300 ms** | **Passed: about 110 ms for a full synthetic day (23 ms read, 85 ms draw).** |
+
+Closed-panel CPU with Power and history on: 0.493% average of three clean runs. 84 tests pass; lint
+is clean. Known limits: up to 30 s of history is lost on a crash; only enabled modules are recorded;
+the window was checked offscreen and by the developer on screen.
