@@ -142,6 +142,7 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
         switch kind {
         case .network: "↓999K ↑999K"
         case .power: "99.9W"
+        case .ports: "⚡99W"
         default: "100%"
         }
     }

@@ -10,7 +10,10 @@ struct ModulePanel: View {
             Text(kind.title).font(.headline)
             details
             chart
-            TopProcessesView(kind: kind, snapshot: model.snapshot)
+            // Ports have no history or processes of their own.
+            if kind != .ports {
+                TopProcessesView(kind: kind, snapshot: model.snapshot)
+            }
         }
     }
 
@@ -21,6 +24,7 @@ struct ModulePanel: View {
         case .disk: DiskDetails(sample: model.snapshot?.disk)
         case .network: NetworkDetails(sample: model.snapshot?.network)
         case .battery: BatteryDetails(sample: model.snapshot?.battery)
+        case .ports: PortsDetails(sample: model.snapshot?.ports)
         case .power: PowerDetails(
                 sample: model.snapshot?.power, thermal: model.snapshot?.thermal, smc: model.snapshot?.smc, energyJoules: model.energyJoules
             )
@@ -49,6 +53,8 @@ struct ModulePanel: View {
             )
         case .battery:
             HistoryChart(title: "Battery", lines: [.init(name: "Charge", series: .batteryCharge)], scale: .fraction, history: model.history)
+        case .ports:
+            EmptyView()
         case .power:
             HistoryChart(
                 title: "Power",

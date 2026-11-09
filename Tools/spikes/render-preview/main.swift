@@ -16,7 +16,7 @@ func run(_ out: String) async throws {
     _ = NSApplication.shared
     let model = LiveModel()
     let cpu = CPUCollector(), mem = MemoryCollector(), disk = DiskCollector(), net = NetworkCollector()
-    let bat = BatteryCollector(), procs = ProcessCollector(), power = PowerCollector(), temperature = TemperatureCollector(), smc = SMCCollector()
+    let bat = BatteryCollector(), procs = ProcessCollector(), power = PowerCollector(), temperature = TemperatureCollector(), smc = SMCCollector(), ports = PortsCollector()
     await power.setDetail(true)
     // A few samples, so that charts and "since opened" have something to show.
     for index in 0..<6 {
@@ -26,6 +26,7 @@ func run(_ out: String) async throws {
         snap.power = try? await power.sample()
         snap.thermal = try? await temperature.sample()
         snap.smc = try? await smc.sample()
+        snap.ports = try? await ports.sample()
         if index > 0 { model.ingest(snap, enabled: ModuleKind.allCases) }
         try await Task.sleep(for: .seconds(1))
     }
@@ -36,7 +37,7 @@ func run(_ out: String) async throws {
             let segments = ModuleKind.allCases.map { kind in
                 let reading = ModuleReading.make(kind, snapshot: model.snapshot ?? Snapshot(timestamp: Date()), recentPeak: 0)
                 return StatusSegment(label: kind.shortLabel, renderer: renderer, tint: .system, text: reading?.text ?? "-",
-                                     widthTemplate: kind == .network ? "↓999K ↑999K" : (kind == .power ? "99.9W" : "100%"),
+                                     widthTemplate: kind == .network ? "↓999K ↑999K" : (kind == .power ? "99.9W" : (kind == .ports ? "⚡99W" : "100%")),
                                      fillSteps: 14, spark: (0..<18).map { 2 + ($0 * 3) % 12 })
             }
             for (name, appearanceName) in [("light", NSAppearance.Name.aqua), ("dark", .darkAqua)] {
@@ -68,7 +69,7 @@ func run(_ out: String) async throws {
         save(host, "\(out)/panel-\(kind.rawValue).png")
     }
     // ImageRenderer draws pure SwiftUI faithfully. AppKit-backed controls such as buttons show as placeholders.
-    for kinds in [ModuleKind.allCases, [.cpu, .memory], [.cpu], [.power]] as [[ModuleKind]] {
+    for kinds in [ModuleKind.allCases, [.cpu, .memory], [.cpu], [.power], [.ports]] as [[ModuleKind]] {
         let view = PanelHost(kinds: kinds, model: model, actions: actions).background(Color.white)
         let renderer = ImageRenderer(content: view)
         renderer.scale = 2

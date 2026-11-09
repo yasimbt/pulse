@@ -17,4 +17,5 @@ public struct MetricID: RawRepresentable, Hashable, Sendable {
     public static let power = MetricID(rawValue: "power")
     public static let temperature = MetricID(rawValue: "temperature")
     public static let smc = MetricID(rawValue: "smc")
+    public static let ports = MetricID(rawValue: "ports")
 }

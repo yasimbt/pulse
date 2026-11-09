@@ -1,5 +1,5 @@
 public enum ModuleKind: String, Codable, CaseIterable, Sendable, Identifiable {
-    case cpu, memory, disk, network, battery, power
+    case cpu, memory, disk, network, battery, power, ports
 
     public var id: String { rawValue }
 
@@ -11,6 +11,7 @@ public enum ModuleKind: String, Codable, CaseIterable, Sendable, Identifiable {
         case .network: "Network"
         case .battery: "Battery"
         case .power: "Power"
+        case .ports: "Ports"
         }
     }
 
@@ -23,6 +24,7 @@ public enum ModuleKind: String, Codable, CaseIterable, Sendable, Identifiable {
         case .network: "NET"
         case .battery: "BAT"
         case .power: "PWR"
+        case .ports: "USB"
         }
     }
 }
@@ -79,7 +81,8 @@ public struct PulseSettings: Codable, Equatable, Sendable {
             ModuleConfig(kind: .memory, isEnabled: true, renderer: .bar),
             ModuleConfig(kind: .network, isEnabled: true, renderer: .text),
             ModuleConfig(kind: .disk, isEnabled: false, renderer: .text),
-            ModuleConfig(kind: .battery, isEnabled: false, renderer: .text)
+            ModuleConfig(kind: .battery, isEnabled: false, renderer: .text),
+            ModuleConfig(kind: .ports, isEnabled: false, renderer: .text)
         ],
         sampleInterval: 1,
         isCombined: false

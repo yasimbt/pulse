@@ -99,6 +99,7 @@ final class AppController: NSObject, NSWindowDelegate {
             networkProcesses: openPanel?.contains(.network) ?? false,
             // A session needs frequencies, temperatures and processes every second.
             powerDetail: (openPanel?.contains(.power) ?? false) || model.recordingStart != nil,
+            portsDetail: openPanel?.contains(.ports) ?? false,
             processHistory: history != nil
         )
         let sampler = sampler

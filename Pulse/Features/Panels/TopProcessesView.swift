@@ -35,6 +35,7 @@ struct TopProcessesView: View {
         case .disk: "Your top processes by disk"
         case .network: "Top processes by network"
         case .power: "Your top processes by energy"
+        case .ports: ""
         }
     }
 
@@ -52,6 +53,8 @@ struct TopProcessesView: View {
             return (snapshot?.processes?.byDisk ?? []).map {
                 Row(id: $0.pid, name: $0.name, value: MetricFormat.rate($0.diskReadBytesPerSecond + $0.diskWriteBytesPerSecond))
             }
+        case .ports:
+            return []
         case .power:
             return (snapshot?.processes?.byEnergy ?? []).map {
                 Row(id: $0.pid, name: $0.name, value: MetricFormat.watts($0.energyWatts))

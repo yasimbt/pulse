@@ -9,7 +9,9 @@ public actor Sampler {
         public var networkProcesses: Bool
         /// The E/P split, frequencies, temperatures, system power and fans, which cost more to read.
         public var powerDetail: Bool
-        /// A process scan every 10 s for history, even with every panel closed.
+        /// Ports and the charger, for the Ports panel.
+        public var portsDetail: Bool
+        /// A process scan for history every `HistoryStore.processInterval`, even with every panel closed.
         public var processHistory: Bool
 
         public init(
@@ -17,12 +19,14 @@ public actor Sampler {
             processes: Bool = false,
             networkProcesses: Bool = false,
             powerDetail: Bool = false,
+            portsDetail: Bool = false,
             processHistory: Bool = false
         ) {
             self.modules = modules
             self.processes = processes
             self.networkProcesses = networkProcesses
             self.powerDetail = powerDetail
+            self.portsDetail = portsDetail
             self.processHistory = processHistory
         }
     }
@@ -45,6 +49,7 @@ public actor Sampler {
     private let power = PowerCollector()
     private let temperature = TemperatureCollector()
     private let smc = SMCCollector()
+    private let ports = PortsCollector()
 
     private let clock = ContinuousClock()
     private var interval: Double
@@ -110,6 +115,7 @@ public actor Sampler {
         if demand.modules.contains(.disk) { snapshot.disk = await attempt(disk) }
         if demand.modules.contains(.network) { snapshot.network = await attempt(network) }
         if demand.modules.contains(.battery) { snapshot.battery = await attempt(battery) }
+        if demand.modules.contains(.ports) || demand.portsDetail { snapshot.ports = await attempt(ports) }
         if demand.modules.contains(.power) || demand.powerDetail { snapshot.power = await attempt(power) }
         // Shown only in the Power panel for now, so read only while it is open.
         if demand.powerDetail {
