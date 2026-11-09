@@ -38,3 +38,8 @@ Tools in `Tools/spikes` compile against `PulseCore.framework` with `swiftc`. `in
 still made clients require GRDB's modules, because without library evolution Swift records internal
 imports in the compiled module. `@_implementationOnly import GRDB`, plus making `HistoryDatabase` a
 class so that clients never need its layout, removes that.
+
+## Budget decision (developer, 2026-11-09)
+Process snapshots every 30 s instead of 10 s, and menu-bar Power every 3 s instead of 2 s. Combined
+item with Power and history, Release, panels closed: 0.520% over 252 s (one clean run; two other
+runs had a Pulse window open and are excluded). Still slightly over 0.5%; needs more clean runs.
