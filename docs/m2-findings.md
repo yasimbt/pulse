@@ -187,5 +187,7 @@ draws less than at 4.
 | Per-app energy ranking | Done, from `ri_energy_nj`. |
 | **Accept: within ±10% of powermetrics** | **Passed: within 1.0% under load.** |
 
+Accepted by the developer on 2026-11-09 and tagged v0.2.0.
+
 Overhead: the combined menu-bar item with Power measured 0.495-0.503% CPU with panels closed, right
 at the 0.5% target (0.420% without Power). 67 tests pass; lint is clean.
