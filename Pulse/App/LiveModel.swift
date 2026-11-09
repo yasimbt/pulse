@@ -12,11 +12,17 @@ final class LiveModel {
     /// Separate from `snapshot` so that Settings redraws only what actually changed.
     private(set) var selfUsage: SelfUsage?
     private(set) var unavailableModules: Set<ModuleKind> = []
+    /// When the current session started, or nil when not recording.
+    private(set) var recordingStart: Date?
     /// A running energy total in joules, for "since the panel opened". Uses the Mac's own
     /// cumulative counter when available, otherwise adds up watts over each interval.
     private(set) var energyJoules: Double?
     private var integratedJoules = 0.0
     private var lastPowerTime: Date?
+
+    func setRecordingStart(_ start: Date?) {
+        recordingStart = start
+    }
 
     func ingest(_ snapshot: Snapshot, enabled: [ModuleKind]) {
         self.snapshot = snapshot

@@ -92,6 +92,9 @@ public final class HistoryDatabase: Sendable {
         migrator.registerMigration("v2: process snapshots") { db in
             try createProcessTables(db)
         }
+        migrator.registerMigration("v3: sessions") { db in
+            try createSessionTables(db)
+        }
         return migrator
     }
 

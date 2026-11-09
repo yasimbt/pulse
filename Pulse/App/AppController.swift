@@ -13,9 +13,14 @@ final class AppController: NSObject, NSWindowDelegate {
     private var openPanel: Set<ModuleKind>?
     private var settingsWindow: NSWindow?
     private var historyWindow: NSWindow?
+    private var sessionsWindow: NSWindow?
+    private var sessionsModel: SessionsModel?
     private var consumer: Task<Void, Never>?
-    /// Nil when the database can't be opened, in which case Pulse runs without history.
+    private var hotKey: HotKey?
+    /// Nil when the database can't be opened, in which case Pulse runs without history or sessions.
+    private let database: HistoryDatabase?
     private let history: HistoryStore?
+    private let recorder: SessionRecorder?
 
     override init() {
         let settings = store.settings
@@ -25,12 +30,14 @@ final class AppController: NSObject, NSWindowDelegate {
         )
         statusBar = StatusBarController(model: model)
         do {
-            history = HistoryStore(database: try HistoryDatabase.open(at: HistoryStore.defaultURL))
+            database = try HistoryDatabase.open(at: HistoryStore.defaultURL)
         } catch {
             Logger(subsystem: PulseInfo.logSubsystem, category: "history")
                 .error("history unavailable: \(String(describing: error), privacy: .public)")
-            history = nil
+            database = nil
         }
+        history = database.map(HistoryStore.init)
+        recorder = database.map(SessionRecorder.init)
         super.init()
     }
 
@@ -42,8 +49,13 @@ final class AppController: NSObject, NSWindowDelegate {
                 let url = URL(fileURLWithPath: "/System/Applications/Utilities/Activity Monitor.app")
                 NSWorkspace.shared.openApplication(at: url, configuration: NSWorkspace.OpenConfiguration())
             },
-            openHistory: history == nil ? nil : { [weak self] in self?.showHistory() }
+            openHistory: history == nil ? nil : { [weak self] in self?.showHistory() },
+            toggleRecording: recorder == nil ? nil : { [weak self] in self?.toggleRecording() },
+            openSessions: database == nil ? nil : { [weak self] in self?.showSessions() }
         )
+        if recorder != nil {
+            hotKey = HotKey { [weak self] in self?.toggleRecording() }
+        }
         statusBar.onPanelChange = { [weak self] kinds in
             self?.openPanel = kinds
             self?.updateDemand()
@@ -61,6 +73,7 @@ final class AppController: NSObject, NSWindowDelegate {
                 model.ingest(snapshot, enabled: store.settings.enabledModules.map(\.kind))
                 statusBar.update(with: store.settings)
                 await history?.record(snapshot)
+                await recorder?.record(snapshot)
             }
         }
     }
@@ -82,9 +95,10 @@ final class AppController: NSObject, NSWindowDelegate {
     private func updateDemand() {
         let demand = Sampler.Demand(
             modules: Set(store.settings.enabledModules.map(\.kind)),
-            processes: openPanel != nil,
+            processes: openPanel != nil || model.recordingStart != nil,
             networkProcesses: openPanel?.contains(.network) ?? false,
-            powerDetail: openPanel?.contains(.power) ?? false,
+            // A session needs frequencies, temperatures and processes every second.
+            powerDetail: (openPanel?.contains(.power) ?? false) || model.recordingStart != nil,
             processHistory: history != nil
         )
         let sampler = sampler
@@ -130,5 +144,49 @@ final class AppController: NSObject, NSWindowDelegate {
         guard let window = notification.object as? NSWindow else { return }
         if window === settingsWindow { settingsWindow = nil }
         if window === historyWindow { historyWindow = nil }
+        if window === sessionsWindow {
+            sessionsWindow = nil
+            sessionsModel = nil
+        }
+    }
+}
+
+// MARK: - Sessions
+
+extension AppController {
+    /// Starts a session, or stops the current one and shows its summary.
+    func toggleRecording() {
+        guard let recorder else { return }
+        Task {
+            if model.recordingStart != nil {
+                let session = try? await recorder.stop()
+                model.setRecordingStart(nil)
+                updateDemand()
+                if let session { showSessions(selecting: session.id) }
+            } else {
+                model.setRecordingStart(await recorder.start())
+                updateDemand()
+            }
+        }
+    }
+
+    func showSessions(selecting id: UUID? = nil) {
+        statusBar.closePanel()
+        guard let database else { return }
+        if sessionsWindow == nil {
+            let sessions = SessionsModel(database: database)
+            let window = NSWindow(contentViewController: NSHostingController(rootView: SessionsView(model: sessions)))
+            window.title = "\(PulseInfo.appName) Sessions"
+            window.styleMask = [.titled, .closable, .miniaturizable, .resizable]
+            window.isReleasedWhenClosed = false
+            window.delegate = self
+            window.setContentSize(NSSize(width: 1000, height: 720))
+            window.center()
+            sessionsWindow = window
+            sessionsModel = sessions
+        }
+        sessionsModel?.reload(selecting: id)
+        NSApp.activate()
+        sessionsWindow?.makeKeyAndOrderFront(nil)
     }
 }

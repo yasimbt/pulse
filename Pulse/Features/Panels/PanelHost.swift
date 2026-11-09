@@ -7,6 +7,9 @@ struct PanelActions {
     let openActivityMonitor: () -> Void
     /// Nil when history isn't available, which hides the button.
     var openHistory: (() -> Void)?
+    /// Nil when sessions aren't available, which hides the Record button.
+    var toggleRecording: (() -> Void)?
+    var openSessions: (() -> Void)?
 }
 
 /// Popover content: one module, or a picker when the combined item holds several.
@@ -32,19 +35,52 @@ struct PanelHost: View {
                 ModulePanel(kind: current, model: model)
             }
             Divider()
-            HStack {
-                Button("Activity Monitor", action: actions.openActivityMonitor)
-                if let openHistory = actions.openHistory {
-                    Button("History…", action: openHistory)
+            VStack(spacing: 8) {
+                HStack {
+                    if let toggleRecording = actions.toggleRecording {
+                        RecordButton(start: model.recordingStart, action: toggleRecording)
+                    }
+                    Spacer()
+                    if let openSessions = actions.openSessions {
+                        Button("Sessions…", action: openSessions)
+                    }
+                    if let openHistory = actions.openHistory {
+                        Button("History…", action: openHistory)
+                    }
                 }
-                Spacer()
-                Button("Settings…", action: actions.openSettings)
-                Button("Quit", action: actions.quit)
+                HStack {
+                    Button("Activity Monitor", action: actions.openActivityMonitor)
+                    Spacer()
+                    Button("Settings…", action: actions.openSettings)
+                    Button("Quit", action: actions.quit)
+                }
             }
             .controlSize(.small)
         }
         .padding(14)
         .frame(width: 360)
+    }
+}
+
+/// Starts or stops a workload session, showing how long the current one has run.
+struct RecordButton: View {
+    let start: Date?
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            if let start {
+                // Redraws once a second, only while recording and only while the panel is open.
+                TimelineView(.periodic(from: start, by: 1)) { context in
+                    Label("Stop  \(MetricFormat.clock(context.date.timeIntervalSince(start)))", systemImage: "stop.fill")
+                        .monospacedDigit()
+                }
+            } else {
+                Label("Record", systemImage: "record.circle")
+            }
+        }
+        .tint(start == nil ? nil : .red)
+        .help(start == nil ? "Record a workload session (\(HotKey.title))" : "Stop and show the summary (\(HotKey.title))")
     }
 }
 

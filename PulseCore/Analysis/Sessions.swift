@@ -119,7 +119,7 @@ public struct SessionSummary: Sendable, Equatable, Codable {
 
 public enum SessionCalculations {
     /// Samples further apart than this, such as across sleep, add no energy for the gap.
-    static let maxStep: TimeInterval = 5
+    public static let maxStep: TimeInterval = 5
 
     public static func summary(
         start: Date,

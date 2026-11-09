@@ -73,6 +73,15 @@ public enum MetricFormat {
         String(format: "%.2f%%", value * 100)
     }
 
+    /// Elapsed time as a clock: "2:05", or "1:02:05" past an hour.
+    public static func clock(_ seconds: Double) -> String {
+        let total = max(0, Int(seconds))
+        let (hours, minutes, rest) = (total / 3600, total / 60 % 60, total % 60)
+        let tail = (rest < 10 ? "0" : "") + String(rest)
+        if hours > 0 { return "\(hours):" + (minutes < 10 ? "0" : "") + "\(minutes):" + tail }
+        return "\(minutes):" + tail
+    }
+
     public static func duration(_ seconds: Double) -> String {
         let minutes = Int((seconds / 60).rounded())
         return minutes < 60 ? "\(minutes)m" : String(format: "%dh %02dm", minutes / 60, minutes % 60)

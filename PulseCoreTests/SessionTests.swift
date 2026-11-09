@@ -96,3 +96,56 @@ private func sample(_ second: Int, cpu: Double, cpuWatts: Double?, gpuWatts: Dou
     // Listed in several rankings but counted once per scan: 2 cores for 3 s, 3 W for 3 s.
     #expect(totals[7] == SessionProcess(pid: 7, name: "swift-frontend", cpuSeconds: 6, energyJoules: 9))
 }
+
+@Test func recorderSavesASessionWithItsSummary() async throws {
+    let database = try HistoryDatabase.inMemory()
+    let recorder = SessionRecorder(database: database)
+    let start = Date(timeIntervalSince1970: 1_800_000_000)
+    await recorder.start(name: "Build", at: start)
+    #expect(await recorder.isRecording)
+    let busy = ProcessUsage(
+        pid: 7, name: "swift-frontend", cpuCores: 3, footprintBytes: 0, diskReadBytesPerSecond: 0,
+        diskWriteBytesPerSecond: 0, energyWatts: 4
+    )
+    for second in 1...5 {
+        var snapshot = Snapshot(timestamp: start.addingTimeInterval(TimeInterval(second)))
+        snapshot.cpu = CPUSample(user: 0.5, system: 0.1, cores: [], clusters: [])
+        snapshot.power = PowerSample(cpuWatts: 8, clusters: [], gpuWatts: 1, aneWatts: nil, gpuActiveFraction: 0.2, gpuFrequencyHz: nil)
+        snapshot.processes = ProcessTable(byCPU: [busy], byMemory: [], byDisk: [], byEnergy: [], unreadableCount: 0)
+        await recorder.record(snapshot)
+    }
+    let session = try #require(try await recorder.stop(at: start.addingTimeInterval(6)))
+    #expect(!(await recorder.isRecording))
+    #expect(session.samples.count == 5)
+    #expect(session.summary.duration == 6)
+    #expect(session.summary.energyJoules == 9 * 5)
+    // 3 cores for 5 s, the first scan covering the second since the start.
+    #expect(session.summary.topProcesses.first?.cpuSeconds == 15)
+
+    let stored = try #require(try database.session(session.id))
+    #expect(stored == session)
+    #expect(try database.sessions().map(\.name) == ["Build"])
+    try database.renameSession(session.id, to: "Release build")
+    #expect(try database.sessions().first?.name == "Release build")
+    try database.deleteSession(session.id)
+    #expect(try database.sessions().isEmpty)
+}
+
+@Test func sessionsExportAsJSONAndCSV() throws {
+    let samples = [
+        SessionSample(
+            time: Date(timeIntervalSince1970: 0), cpuUsage: 0.5, gpuUsage: nil, cpuWatts: 12.25, gpuWatts: 0.5, systemWatts: nil,
+            efficiencyHz: 2.758e9, performanceHz: 3.14e9, chipCelsius: 77.04, thermalState: .fair, throttled: true
+        )
+    ]
+    let summary = SessionCalculations.summary(
+        start: samples[0].time, end: samples[0].time.addingTimeInterval(1), samples: samples, processes: []
+    )
+    let session = Session(id: UUID(), name: "Build", summary: summary, samples: samples, processes: [])
+    let lines = SessionExport.csv(session).split(separator: "\n")
+    #expect(lines.first == "time,cpu_usage,gpu_usage,cpu_watts,gpu_watts,system_watts,efficiency_mhz,performance_mhz,chip_celsius,thermal_state,throttled")
+    #expect(lines.last == "1970-01-01T00:00:00Z,0.500,,12.250,0.500,,2758,3140,77.0,fair,1")
+    let decoder = JSONDecoder()
+    decoder.dateDecodingStrategy = .iso8601
+    #expect(try decoder.decode(Session.self, from: SessionExport.json(session)) == session)
+}
