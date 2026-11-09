@@ -143,7 +143,9 @@ private func sample(_ second: Int, cpu: Double, cpuWatts: Double?, gpuWatts: Dou
     )
     let session = Session(id: UUID(), name: "Build", summary: summary, samples: samples, processes: [])
     let lines = SessionExport.csv(session).split(separator: "\n")
-    #expect(lines.first == "time,cpu_usage,gpu_usage,cpu_watts,gpu_watts,system_watts,efficiency_mhz,performance_mhz,chip_celsius,thermal_state,throttled")
+    let header = "time,cpu_usage,gpu_usage,cpu_watts,gpu_watts,system_watts,"
+        + "efficiency_mhz,performance_mhz,chip_celsius,thermal_state,throttled"
+    #expect(lines.first.map(String.init) == header)
     #expect(lines.last == "1970-01-01T00:00:00Z,0.500,,12.250,0.500,,2758,3140,77.0,fair,1")
     let decoder = JSONDecoder()
     decoder.dateDecodingStrategy = .iso8601
