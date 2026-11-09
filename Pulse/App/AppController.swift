@@ -13,6 +13,8 @@ final class AppController: NSObject, NSWindowDelegate {
     private var openPanel: Set<ModuleKind>?
     private var settingsWindow: NSWindow?
     private var historyWindow: NSWindow?
+    private var welcomeWindow: NSWindow?
+    private static let welcomeSeenKey = "hasSeenWelcome"
     private var sessionsWindow: NSWindow?
     private var sessionsModel: SessionsModel?
     private var consumer: Task<Void, Never>?
@@ -77,6 +79,7 @@ final class AppController: NSObject, NSWindowDelegate {
         store.onChange = { [weak self] _ in self?.applyEffective() }
         hudHotKey = HotKey(.hud) { [weak self] in self?.toggleHUD() }
         hud.apply(store.settings.hud ?? .default)
+        if !UserDefaults.standard.bool(forKey: Self.welcomeSeenKey) { showWelcome() }
         IntentBridge.controller = self
         statusBar.apply(effective)
         applyMetricsServer(store.settings)
@@ -178,10 +181,30 @@ final class AppController: NSObject, NSWindowDelegate {
         Task { await sampler.setDemand(demand) }
     }
 
+    /// The first-launch welcome. Also opened from Settings.
+    func showWelcome() {
+        if welcomeWindow == nil {
+            let view = WelcomeView(
+                openSettings: { [weak self] in self?.showSettings() },
+                done: { [weak self] in self?.welcomeWindow?.close() }
+            )
+            let window = NSWindow(contentViewController: NSHostingController(rootView: view))
+            window.title = "Welcome to \(PulseInfo.appName)"
+            window.styleMask = [.titled, .closable]
+            window.isReleasedWhenClosed = false
+            window.delegate = self
+            window.center()
+            welcomeWindow = window
+        }
+        NSApp.activate()
+        welcomeWindow?.makeKeyAndOrderFront(nil)
+    }
+
     private func showSettings() {
         statusBar.closePanel()
         if settingsWindow == nil {
-            let window = NSWindow(contentViewController: NSHostingController(rootView: SettingsView(store: store, model: model)))
+            let settingsView = SettingsView(store: store, model: model, showWelcome: { [weak self] in self?.showWelcome() })
+            let window = NSWindow(contentViewController: NSHostingController(rootView: settingsView))
             window.title = "\(PulseInfo.appName) Settings"
             window.styleMask = [.titled, .closable, .miniaturizable]
             window.isReleasedWhenClosed = false
@@ -217,6 +240,10 @@ final class AppController: NSObject, NSWindowDelegate {
         guard let window = notification.object as? NSWindow else { return }
         if window === settingsWindow { settingsWindow = nil }
         if window === historyWindow { historyWindow = nil }
+        if window === welcomeWindow {
+            welcomeWindow = nil
+            UserDefaults.standard.set(true, forKey: Self.welcomeSeenKey)
+        }
         if window === sessionsWindow {
             sessionsWindow = nil
             sessionsModel = nil

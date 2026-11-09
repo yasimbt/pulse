@@ -80,6 +80,15 @@ func run(_ out: String) async throws {
     }
     try await renderHistory(out)
     try await captureSettings(out, model: model)
+    let welcome = NSHostingView(rootView: WelcomeView(openSettings: {}, done: {}))
+    welcome.appearance = NSAppearance(named: .aqua)
+    welcome.frame = NSRect(origin: .zero, size: welcome.fittingSize)
+    let welcomeWindow = NSWindow(contentRect: welcome.frame, styleMask: [.borderless], backing: .buffered, defer: false)
+    welcomeWindow.appearance = NSAppearance(named: .aqua)
+    welcomeWindow.contentView = welcome
+    welcome.layoutSubtreeIfNeeded()
+    try await Task.sleep(for: .milliseconds(300))
+    save(welcome, "\(out)/welcome.png")
     // The HUD, on a mid-grey background as it might sit over a game.
     let hud = NSHostingView(rootView: HUDView(model: model).padding(20).background(Color(white: 0.45)))
     hud.frame = NSRect(origin: .zero, size: hud.fittingSize)

@@ -28,3 +28,13 @@ points. The descriptor uses the same thinned points as the drawing (at most 600 
 chart's own value formatting. Other checks: icon-only buttons (history earlier/later) have labels,
 module tabs carry the selected trait, menu-bar items and the HUD have labels, and metric rows read
 as one sentence. Not yet checked by a VoiceOver user on screen.
+
+## Onboarding (`Pulse/Features/Settings/WelcomeView.swift`)
+Shown once, on first launch (`hasSeenWelcome` in UserDefaults, set when it closes), and again from
+Settings → General → Show Welcome. Explains where Pulse appears, that macOS lets people choose which
+apps may show items in the menu bar, and that a notch can hide items; "Open Menu Bar Settings" opens
+`x-apple.systempreferences:com.apple.ControlCenter-Settings.extension`, the identifier of the
+System Settings pane that holds the menu bar settings on macOS 27.2
+(`/System/Library/ExtensionKit/Extensions/ControlCenterSettings.appex`). Pulse doesn't detect whether
+its own item is hidden: its status item windows belong to MenuBarAgent (docs/m1-findings.md), and no
+reliable signal was found, so it explains rather than detects.

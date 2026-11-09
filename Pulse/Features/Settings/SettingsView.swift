@@ -5,6 +5,7 @@ import SwiftUI
 struct SettingsView: View {
     @Bindable var store: SettingsStore
     let model: LiveModel
+    var showWelcome: () -> Void = {}
 
     /// Edits one rule, creating the rule settings on first use.
     private func ruleBinding(_ path: WritableKeyPath<RuleSettings, RuleActions>) -> Binding<RuleActions> {
@@ -38,6 +39,9 @@ struct SettingsView: View {
                     }
                 }
                 LaunchAtLoginToggle()
+                LabeledContent("Getting started") {
+                    Button("Show Welcome", action: showWelcome)
+                }
             }
             Section("Rules") {
                 RuleRow(title: "On battery", actions: ruleBinding(\.onBattery))
