@@ -158,3 +158,34 @@ does not pad a nested struct the way C does: `keyInfo` must be padded to 12 byte
   bar. 0.18 ms per read.
 - **PPBR** follows PSTR on battery (power drawn from the battery). **PHPS** matched CLPC CPU watts
   under load (18.4 W) but is noisy at idle. Neither is used yet.
+
+## Final accuracy check (`sh Tools/spikes/power-accuracy/run.sh`)
+Pulse's `PowerCollector` (detail on) next to `sudo powermetrics --samplers cpu_power,gpu_power`,
+15 one-second samples per stage, M5 MacBook Air on macOS 27.2.
+
+| Stage | CPU Pulse | CPU powermetrics | Error | GPU Pulse | GPU powermetrics | Error |
+|---|---|---|---|---|---|---|
+| Idle | 0.11 W | 0.08 W | +27 mW | 0.00 W | 0.00 W | 0 mW |
+| 2 busy loops | 9.51 W | 9.54 W | -0.3% | 0.00 W | 0.00 W | 0 mW |
+| 4 busy loops | 18.66 W | 18.85 W | -1.0% | 0.00 W | 0.00 W | 0 mW |
+| 10 busy loops | 11.08 W | 11.12 W | -0.3% | 0.00 W | 0.00 W | 0 mW |
+| Metal GPU load | 0.47 W | 0.43 W | +36 mW | 15.23 W | 15.34 W | -0.7% |
+
+Every loaded stage is within 1.0%, against M2's ±10%. At 10 loops the fanless Air throttles, so it
+draws less than at 4.
+
+## M2 acceptance
+| Spec item | Status |
+|---|---|
+| IOReport CPU/GPU watts | Done. CPU from AppleCLPC (verified M5, macOS 27), PMP histograms elsewhere; GPU from CLPC or Energy Model. |
+| ANE watts | Read but hidden: not yet checked under an ANE workload. |
+| DRAM watts | Not available without root on macOS 27 (Energy Model DRAM counter stalls). Hidden. |
+| CPU/GPU frequency and residency | Done, while the Power panel is open. Frequency tables used only when they match. |
+| Temperatures with a per-chip sensor map | Done: chip hottest/average, SSD, battery. No GPU sensor identified. |
+| Fan RPM readout | Done; hidden on this fanless Mac. Untested on a Mac with fans. |
+| Power panel: stacked chart, energy since boot and since opened | Done, plus whole-Mac power from SMC PSTR. |
+| Per-app energy ranking | Done, from `ri_energy_nj`. |
+| **Accept: within ±10% of powermetrics** | **Passed: within 1.0% under load.** |
+
+Overhead: the combined menu-bar item with Power measured 0.495-0.503% CPU with panels closed, right
+at the 0.5% target (0.420% without Power). 67 tests pass; lint is clean.
