@@ -10,8 +10,8 @@ settings:
   base:
     SWIFT_VERSION: "6.0"
     ARCHS: arm64
-    MARKETING_VERSION: "0.1.0"
-    CURRENT_PROJECT_VERSION: "1"
+    MARKETING_VERSION: "0.2.0"
+    CURRENT_PROJECT_VERSION: "2"
     # "Sign to Run Locally": ad-hoc signature, no Apple Developer account needed.
     CODE_SIGN_STYLE: Manual
     CODE_SIGN_IDENTITY: "-"
