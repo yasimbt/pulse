@@ -57,3 +57,17 @@ Shortcuts and Spotlight without setup. They run inside the running app through `
 they use the menu bar's latest snapshot and the same session recorder; temperatures appear in the
 summary only when something is reading them (an open Power panel, a session or alerts).
 The build's `Metadata.appintents/extract.actionsdata` lists all three actions and three shortcuts.
+
+## M6 acceptance
+SPEC.md gives M6 no acceptance line, so each item was checked as below.
+
+| Spec item | Status |
+|---|---|
+| Threshold alerts (temperature, swap growth, low disk, battery health, sustained throttling) via UserNotifications, with cooldowns | Done, plus charger shortfall. Engine tests cover timing and cooldowns; the developer saw a real chip-temperature notification. |
+| Rules, e.g. on battery reduce sample rate or hide a module | Done for on battery and Low Power Mode; checked live by the developer. |
+| App Intents / Shortcuts: get current metrics, start/stop session | Done; run in Shortcuts by the developer. |
+| Local HTTP endpoint, opt-in, localhost only, JSON and Prometheus | Done; checked live, including refusal on the network address. |
+| `pulse-cli` with `--json`, `--prometheus`, `--watch` | Done; ships inside Pulse.app. |
+
+Accepted by the developer on 2026-11-09 and tagged v0.6.0. 114 tests pass; lint is clean.
+v0.5.0 is not tagged yet: M5 stays open until a second charger and a hub are tested.
