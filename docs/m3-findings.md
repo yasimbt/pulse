@@ -82,6 +82,8 @@ one-second rows and averaged and pruned by the store as a real day would be: 13,
 | **Accept: database < 200 MB after 30 days** | **Passed: 59 MB with every table full.** |
 | **Accept: timeline renders 24 h in < 300 ms** | **Passed: about 110 ms for a full synthetic day (23 ms read, 85 ms draw).** |
 
+Accepted by the developer on 2026-11-09 and tagged v0.3.0.
+
 Closed-panel CPU with Power and history on: 0.493% average of three clean runs. 84 tests pass; lint
 is clean. Known limits: up to 30 s of history is lost on a crash; only enabled modules are recorded;
 the window was checked offscreen and by the developer on screen.
