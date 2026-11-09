@@ -14,7 +14,7 @@ line_length:
   error: 200
 
 identifier_name:
-  excluded: [id, up, to, at]
+  excluded: [id, up, to, at, db] # db: the GRDB convention for a database connection.
 
 file_length:
   warning: 400

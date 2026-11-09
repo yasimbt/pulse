@@ -19,4 +19,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         controller = AppController()
         controller?.start()
     }
+
+    /// Delays quitting until up to 30 s of buffered history is written.
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        guard let controller else { return .terminateNow }
+        Task {
+            await controller.flushHistory()
+            sender.reply(toApplicationShouldTerminate: true)
+        }
+        return .terminateLater
+    }
 }

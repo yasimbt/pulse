@@ -17,6 +17,13 @@ settings:
     CODE_SIGN_IDENTITY: "-"
     DEVELOPMENT_TEAM: ""
 
+packages:
+  # SQLite for the history store (M3). Pinned exactly, because the generated project and its
+  # Package.resolved aren't committed.
+  GRDB:
+    url: https://github.com/groue/GRDB.swift
+    exactVersion: 7.12.0
+
 targets:
   Pulse:
     type: application
@@ -39,6 +46,8 @@ targets:
     platform: macOS
     sources:
       - path: PulseCore
+    dependencies:
+      - package: GRDB
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.pulse.core

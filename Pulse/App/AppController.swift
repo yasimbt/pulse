@@ -1,4 +1,5 @@
 import AppKit
+import os
 import PulseCore
 import SwiftUI
 
@@ -12,6 +13,8 @@ final class AppController: NSObject, NSWindowDelegate {
     private var openPanel: Set<ModuleKind>?
     private var settingsWindow: NSWindow?
     private var consumer: Task<Void, Never>?
+    /// Nil when the database can't be opened, in which case Pulse runs without history.
+    private let history: HistoryStore?
 
     override init() {
         let settings = store.settings
@@ -20,6 +23,13 @@ final class AppController: NSObject, NSWindowDelegate {
             demand: Sampler.Demand(modules: Set(settings.enabledModules.map(\.kind)))
         )
         statusBar = StatusBarController(model: model)
+        do {
+            history = HistoryStore(database: try HistoryDatabase.open(at: HistoryStore.defaultURL))
+        } catch {
+            Logger(subsystem: PulseInfo.logSubsystem, category: "history")
+                .error("history unavailable: \(String(describing: error), privacy: .public)")
+            history = nil
+        }
         super.init()
     }
 
@@ -46,8 +56,14 @@ final class AppController: NSObject, NSWindowDelegate {
                 guard let self else { return }
                 model.ingest(snapshot, enabled: store.settings.enabledModules.map(\.kind))
                 statusBar.update(with: store.settings)
+                await history?.record(snapshot)
             }
         }
+    }
+
+    /// Writes buffered history, so that quitting loses nothing.
+    func flushHistory() async {
+        await history?.flush()
     }
 
     private func apply(_ settings: PulseSettings) {
