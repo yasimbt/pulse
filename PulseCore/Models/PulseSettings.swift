@@ -60,6 +60,33 @@ public struct ModuleConfig: Codable, Equatable, Sendable, Identifiable {
     }
 }
 
+/// The floating heads-up display.
+public struct HUDSettings: Codable, Equatable, Sendable {
+    public enum Corner: String, Codable, CaseIterable, Sendable, Identifiable {
+        case topLeft, topRight, bottomLeft, bottomRight
+
+        public var id: String { rawValue }
+        public var title: String {
+            switch self {
+            case .topLeft: "Top left"
+            case .topRight: "Top right"
+            case .bottomLeft: "Bottom left"
+            case .bottomRight: "Bottom right"
+            }
+        }
+    }
+
+    public var isVisible: Bool
+    public var corner: Corner
+
+    public static let `default` = HUDSettings(isVisible: false, corner: .topRight)
+
+    public init(isVisible: Bool, corner: Corner) {
+        self.isVisible = isVisible
+        self.corner = corner
+    }
+}
+
 public struct PulseSettings: Codable, Equatable, Sendable {
     public static let sampleIntervals: [Double] = [0.5, 1, 2, 5]
 
@@ -73,6 +100,7 @@ public struct PulseSettings: Codable, Equatable, Sendable {
     /// Nil until first changed; optional for the same reason.
     public var alerts: AlertSettings?
     public var rules: RuleSettings?
+    public var hud: HUDSettings?
 
     public init(
         modules: [ModuleConfig],
@@ -80,7 +108,8 @@ public struct PulseSettings: Codable, Equatable, Sendable {
         isCombined: Bool,
         metricsServerPort: Int? = nil,
         alerts: AlertSettings? = nil,
-        rules: RuleSettings? = nil
+        rules: RuleSettings? = nil,
+        hud: HUDSettings? = nil
     ) {
         self.modules = modules
         self.sampleInterval = sampleInterval
@@ -88,6 +117,7 @@ public struct PulseSettings: Codable, Equatable, Sendable {
         self.metricsServerPort = metricsServerPort
         self.alerts = alerts
         self.rules = rules
+        self.hud = hud
     }
 
     public static let `default` = PulseSettings(
@@ -123,7 +153,8 @@ public struct PulseSettings: Codable, Equatable, Sendable {
             // Unprivileged ports only; anything else turns it off.
             metricsServerPort: metricsServerPort.flatMap { (1024...65535).contains($0) ? $0 : nil },
             alerts: alerts,
-            rules: rules
+            rules: rules,
+            hud: hud
         )
     }
 }

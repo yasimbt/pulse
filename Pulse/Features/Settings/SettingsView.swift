@@ -52,6 +52,9 @@ struct SettingsView: View {
                     set: { store.settings.alerts = $0 }
                 ))
             }
+            Section("Heads-up display") {
+                HUDRows(hud: Binding(get: { store.settings.hud ?? .default }, set: { store.settings.hud = $0 }))
+            }
             Section("Sharing") {
                 MetricsServerRows(port: $store.settings.metricsServerPort)
             }
@@ -138,6 +141,22 @@ private struct AlertRows: View {
         case .thermalPressure: "When macOS reports thermal pressure for minutes at a time"
         case .chargerShortfall: "When the battery drains although a charger is connected"
         }
+    }
+}
+
+/// The floating HUD's switch and corner.
+private struct HUDRows: View {
+    @Binding var hud: HUDSettings
+
+    var body: some View {
+        Toggle("Show a floating HUD (\(HotKey.Shortcut.hud.title))", isOn: $hud.isVisible)
+        Picker("Corner", selection: $hud.corner) {
+            ForEach(HUDSettings.Corner.allCases) { Text($0.title).tag($0) }
+        }
+        Text("Stays above other windows, including full-screen apps, and lets clicks pass through. "
+            + "While it shows, Pulse reads power and temperature every second (about 1-2% CPU).")
+            .font(.caption)
+            .foregroundStyle(.secondary)
     }
 }
 

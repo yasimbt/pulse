@@ -80,7 +80,9 @@ struct RecordButton: View {
             }
         }
         .tint(start == nil ? nil : .red)
-        .help(start == nil ? "Record a workload session (\(HotKey.title))" : "Stop and show the summary (\(HotKey.title))")
+        .help(start == nil
+            ? "Record a workload session (\(HotKey.Shortcut.record.title))"
+            : "Stop and show the summary (\(HotKey.Shortcut.record.title))")
     }
 }
 

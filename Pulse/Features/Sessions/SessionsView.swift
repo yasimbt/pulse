@@ -42,7 +42,7 @@ struct SessionsView: View {
             VStack(spacing: 8) {
                 Text(model.sessions.isEmpty ? "No sessions yet" : "Select a session, or two to compare")
                     .font(.title3)
-                Text("Record one with Record in any Pulse panel, or press \(HotKey.title) from anywhere.")
+                Text("Record one with Record in any Pulse panel, or press \(HotKey.Shortcut.record.title) from anywhere.")
                     .foregroundStyle(.secondary)
             }
         }

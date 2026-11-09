@@ -80,6 +80,14 @@ func run(_ out: String) async throws {
     }
     try await renderHistory(out)
     try await captureSettings(out, model: model)
+    // The HUD, on a mid-grey background as it might sit over a game.
+    let hud = NSHostingView(rootView: HUDView(model: model).padding(20).background(Color(white: 0.45)))
+    hud.frame = NSRect(origin: .zero, size: hud.fittingSize)
+    let hudWindow = NSWindow(contentRect: hud.frame, styleMask: [.borderless], backing: .buffered, defer: false)
+    hudWindow.contentView = hud
+    hud.layoutSubtreeIfNeeded()
+    try await Task.sleep(for: .milliseconds(300))
+    save(hud, "\(out)/hud.png")
     try await benchmarkFullDay(out)
     try await captureHistoryWindow(out, size: NSSize(width: 960, height: 720))
     try await captureHistoryWindow(out, size: NSSize(width: 860, height: 560))

@@ -17,6 +17,8 @@ final class AppController: NSObject, NSWindowDelegate {
     private var sessionsModel: SessionsModel?
     private var consumer: Task<Void, Never>?
     private var hotKey: HotKey?
+    private var hudHotKey: HotKey?
+    private lazy var hud = HUDController(model: model)
     /// Nil when the database can't be opened, in which case Pulse runs without history or sessions.
     private let database: HistoryDatabase?
     private let history: HistoryStore?
@@ -27,6 +29,8 @@ final class AppController: NSObject, NSWindowDelegate {
     private var powerContext = PowerContext.current()
     private var lastPowerCheck = Date()
     private var powerStateObserver: NSObjectProtocol?
+
+    private var hudVisible: Bool { store.settings.hud?.isVisible ?? false }
 
     /// The person's settings, changed by any rule that applies now. Settings shows their own.
     private var effective: PulseSettings { Rules.effective(store.settings, context: powerContext) }
@@ -64,13 +68,15 @@ final class AppController: NSObject, NSWindowDelegate {
             openSessions: database == nil ? nil : { [weak self] in self?.showSessions() }
         )
         if recorder != nil {
-            hotKey = HotKey { [weak self] in self?.toggleRecording() }
+            hotKey = HotKey(.record) { [weak self] in self?.toggleRecording() }
         }
         statusBar.onPanelChange = { [weak self] kinds in
             self?.openPanel = kinds
             self?.updateDemand()
         }
         store.onChange = { [weak self] _ in self?.applyEffective() }
+        hudHotKey = HotKey(.hud) { [weak self] in self?.toggleHUD() }
+        hud.apply(store.settings.hud ?? .default)
         IntentBridge.controller = self
         statusBar.apply(effective)
         applyMetricsServer(store.settings)
@@ -137,7 +143,15 @@ final class AppController: NSObject, NSWindowDelegate {
         apply(effective)
     }
 
+    /// Shows or hides the floating HUD, remembering the choice.
+    private func toggleHUD() {
+        var hudSettings = store.settings.hud ?? .default
+        hudSettings.isVisible.toggle()
+        store.settings.hud = hudSettings
+    }
+
     private func apply(_ settings: PulseSettings) {
+        hud.apply(settings.hud ?? .default)
         applyMetricsServer(settings)
         alerts.settingsChanged(settings.alerts ?? .default)
         statusBar.apply(settings)
@@ -150,11 +164,12 @@ final class AppController: NSObject, NSWindowDelegate {
     /// Process scans run only while a panel is open, and `nettop` only while Network is showing.
     private func updateDemand() {
         let demand = Sampler.Demand(
-            modules: Set(effective.enabledModules.map(\.kind)),
+            // The HUD shows CPU and memory even when the menu bar doesn't.
+            modules: Set(effective.enabledModules.map(\.kind)).union(hudVisible ? [.cpu, .memory] : []),
             processes: openPanel != nil || model.recordingStart != nil,
             networkProcesses: openPanel?.contains(.network) ?? false,
             // A session needs frequencies, temperatures and processes every second.
-            powerDetail: (openPanel?.contains(.power) ?? false) || model.recordingStart != nil,
+            powerDetail: (openPanel?.contains(.power) ?? false) || model.recordingStart != nil || hudVisible,
             portsDetail: openPanel?.contains(.ports) ?? false,
             alerts: !(store.settings.alerts ?? .default).enabled.isEmpty,
             processHistory: history != nil

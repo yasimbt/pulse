@@ -2,26 +2,52 @@ import Carbon.HIToolbox
 import Foundation
 
 /// A system-wide keyboard shortcut. Uses Carbon's hot-key API, which, unlike monitoring all key
-/// presses, needs no Accessibility permission: macOS delivers only this one combination.
+/// presses, needs no Accessibility permission: macOS delivers only the registered combinations.
 @MainActor
 final class HotKey {
+    /// Pulse's shortcuts, each with its own identifier.
+    enum Shortcut: UInt32 {
+        case record = 1
+        case hud = 2
+
+        var keyCode: UInt32 {
+            switch self {
+            case .record: UInt32(kVK_ANSI_R)
+            case .hud: UInt32(kVK_ANSI_H)
+            }
+        }
+
+        /// How the shortcut is shown in the interface.
+        var title: String {
+            switch self {
+            case .record: "⌃⌥⌘R"
+            case .hud: "⌃⌥⌘H"
+            }
+        }
+    }
+
     private var reference: EventHotKeyRef?
     private var handler: EventHandlerRef?
+    private let shortcut: Shortcut
     private let action: @MainActor () -> Void
 
-    /// ⌃⌥⌘R by default. Returns nil if another app already holds the combination.
-    init?(
-        keyCode: UInt32 = UInt32(kVK_ANSI_R),
-        modifiers: UInt32 = UInt32(controlKey | optionKey | cmdKey),
-        action: @escaping @MainActor () -> Void
-    ) {
+    /// Control-Option-Command plus the shortcut's key. Returns nil if another app already holds it.
+    init?(_ shortcut: Shortcut, action: @escaping @MainActor () -> Void) {
+        self.shortcut = shortcut
         self.action = action
         var pressed = EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: UInt32(kEventHotKeyPressed))
         let installed = InstallEventHandler(
             GetApplicationEventTarget(),
-            { _, _, context in
-                guard let context else { return OSStatus(eventNotHandledErr) }
+            { _, event, context in
+                guard let event, let context else { return OSStatus(eventNotHandledErr) }
                 let hotKey = Unmanaged<HotKey>.fromOpaque(context).takeUnretainedValue()
+                // Every handler sees every hot key the app registered, so each checks it's its own.
+                var pressedID = EventHotKeyID()
+                let status = GetEventParameter(
+                    event, EventParamName(kEventParamDirectObject), EventParamType(typeEventHotKeyID), nil,
+                    MemoryLayout<EventHotKeyID>.size, nil, &pressedID
+                )
+                guard status == noErr, pressedID.id == hotKey.shortcut.rawValue else { return OSStatus(eventNotHandledErr) }
                 // Carbon delivers hot keys on the main thread's event loop.
                 MainActor.assumeIsolated { hotKey.action() }
                 return noErr
@@ -32,8 +58,9 @@ final class HotKey {
             &handler
         )
         // "PLSE": an identifier for Pulse's hot keys.
-        let identifier = EventHotKeyID(signature: OSType(0x504C_5345), id: 1)
-        let registered = RegisterEventHotKey(keyCode, modifiers, identifier, GetApplicationEventTarget(), 0, &reference)
+        let identifier = EventHotKeyID(signature: OSType(0x504C_5345), id: shortcut.rawValue)
+        let modifiers = UInt32(controlKey | optionKey | cmdKey)
+        let registered = RegisterEventHotKey(shortcut.keyCode, modifiers, identifier, GetApplicationEventTarget(), 0, &reference)
         guard installed == noErr, registered == noErr else { return nil }
     }
 
@@ -42,7 +69,4 @@ final class HotKey {
         if let reference { UnregisterEventHotKey(reference) }
         if let handler { RemoveEventHandler(handler) }
     }
-
-    /// How the shortcut is shown in the interface.
-    static let title = "⌃⌥⌘R"
 }
