@@ -48,3 +48,12 @@ change notification).
 With Alerts, Rules and Sharing added, the window grew to 1,623 pt, taller than a MacBook Air's
 screen, and didn't scroll. It now has a fixed height of 640 pt and the grouped form scrolls.
 `SettingsStore` takes the `UserDefaults` to use, so previews write to a throwaway domain.
+
+## Shortcuts actions (`Pulse/App/PulseIntents.swift`)
+App Intents in the app target: "Get Current Metrics" (returns a sentence such as "CPU 12%, memory
+76%, power 3.2 W, chip 45 °C."), "Start Pulse Session" (optional name) and "Stop Pulse Session"
+(returns the session's summary). `PulseShortcuts` lists them with phrases so they appear in
+Shortcuts and Spotlight without setup. They run inside the running app through `IntentBridge`, so
+they use the menu bar's latest snapshot and the same session recorder; temperatures appear in the
+summary only when something is reading them (an open Power panel, a session or alerts).
+The build's `Metadata.appintents/extract.actionsdata` lists all three actions and three shortcuts.

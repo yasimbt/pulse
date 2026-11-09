@@ -71,6 +71,7 @@ final class AppController: NSObject, NSWindowDelegate {
             self?.updateDemand()
         }
         store.onChange = { [weak self] _ in self?.applyEffective() }
+        IntentBridge.controller = self
         statusBar.apply(effective)
         applyMetricsServer(store.settings)
         powerStateObserver = NotificationCenter.default.addObserver(
@@ -213,18 +214,38 @@ final class AppController: NSObject, NSWindowDelegate {
 extension AppController {
     /// Starts a session, or stops the current one and shows its summary.
     func toggleRecording() {
-        guard let recorder else { return }
         Task {
             if model.recordingStart != nil {
-                let session = try? await recorder.stop()
-                model.setRecordingStart(nil)
-                updateDemand()
-                if let session { showSessions(selecting: session.id) }
+                if let session = await stopRecording() { showSessions(selecting: session.id) }
             } else {
-                model.setRecordingStart(await recorder.start())
-                updateDemand()
+                _ = await startRecording(name: nil)
             }
         }
+    }
+
+    /// Starts a session unless one is recording. False when sessions aren't available.
+    func startRecording(name: String?) async -> Bool {
+        guard let recorder else { return false }
+        if model.recordingStart == nil {
+            let trimmed = name?.trimmingCharacters(in: .whitespacesAndNewlines)
+            model.setRecordingStart(await recorder.start(name: trimmed?.isEmpty == false ? trimmed : nil))
+            updateDemand()
+        }
+        return true
+    }
+
+    /// Stops and saves the current session. Nil when none was recording.
+    func stopRecording() async -> Session? {
+        guard let recorder, model.recordingStart != nil else { return nil }
+        let session = try? await recorder.stop()
+        model.setRecordingStart(nil)
+        updateDemand()
+        return session
+    }
+
+    /// The latest readings in one sentence, for the Shortcuts action.
+    func currentSummary() -> String {
+        model.snapshot.map(MetricsExport.summary) ?? "No readings yet."
     }
 
     func showSessions(selecting id: UUID? = nil) {

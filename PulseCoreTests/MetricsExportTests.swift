@@ -66,3 +66,12 @@ private func text(_ data: Data) -> String { String(decoding: data, as: UTF8.self
     #expect(text(data).contains("pulse_power_watts{component=\"cpu\"} 12.5"))
     await server.stop()
 }
+
+@Test func summariesReadAsSentences() {
+    #expect(MetricsExport.summary(snapshot()) == "CPU 25%, power 12.8 W, chip 61 °C.")
+    #expect(MetricsExport.summary(Snapshot(timestamp: Date())) == "No readings yet.")
+    let start = Date(timeIntervalSince1970: 0)
+    let summary = SessionCalculations.summary(start: start, end: start.addingTimeInterval(125), samples: [], processes: [])
+    let session = Session(id: UUID(), name: "Build", summary: summary, samples: [], processes: [])
+    #expect(MetricsExport.summary(session) == "Build: 2:05, 0 mWh used, no throttling.")
+}

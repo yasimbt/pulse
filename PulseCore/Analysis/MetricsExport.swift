@@ -63,6 +63,30 @@ public enum MetricsExport {
         return result
     }
 
+    /// One readable sentence for Shortcuts, such as "CPU 12%, memory 76%, power 3.2 W, chip 45 °C."
+    /// Leaves out what the snapshot doesn't have.
+    public static func summary(_ snapshot: Snapshot) -> String {
+        var parts: [String] = []
+        if let cpu = snapshot.cpu { parts.append("CPU \(MetricFormat.percent(cpu.total))") }
+        if let memory = snapshot.memory { parts.append("memory \(MetricFormat.percent(memory.usedFraction))") }
+        if let power = snapshot.power, power.cpuWatts != nil { parts.append("power \(MetricFormat.watts(power.totalWatts))") }
+        if let chip = snapshot.thermal?.reading("chipHottest") { parts.append("chip \(MetricFormat.temperature(chip.celsius))") }
+        if let battery = snapshot.battery { parts.append("battery \(MetricFormat.percent(battery.chargeFraction))") }
+        if let disk = snapshot.disk { parts.append("\(MetricFormat.bytes(Double(disk.availableBytes))) free") }
+        return parts.isEmpty ? "No readings yet." : parts.joined(separator: ", ") + "."
+    }
+
+    /// A session's summary in one sentence, for Shortcuts.
+    public static func summary(_ session: Session) -> String {
+        let summary = session.summary
+        var parts = ["\(session.name): \(MetricFormat.clock(summary.duration))"]
+        if let cpu = summary.cpuUsage { parts.append("CPU \(MetricFormat.percent(cpu.average)) average") }
+        parts.append("\(MetricFormat.energy(joules: summary.energyJoules)) used")
+        if let chip = summary.peakChipCelsius { parts.append("chip up to \(MetricFormat.temperature(chip))") }
+        parts.append(summary.throttledSeconds > 0 ? "throttled for \(MetricFormat.clock(summary.throttledSeconds))" : "no throttling")
+        return parts.joined(separator: ", ") + "."
+    }
+
     /// The Prometheus text exposition format, version 0.0.4.
     public static func prometheus(_ snapshot: Snapshot) -> String {
         var lines: [String] = []
