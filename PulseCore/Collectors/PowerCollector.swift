@@ -5,7 +5,7 @@ import IOKit
 /// root. See docs/m2-findings.md for why each source is used.
 ///
 /// - Always: AppleCLPC's aggregate counters on verified chips, about 1.5 ms per sample, read at
-///   most every 2 s. Elsewhere, the PMP energy histograms plus the Energy Model GPU counter, which
+///   most every 3 s. Elsewhere, the PMP energy histograms plus the Energy Model GPU counter, which
 ///   cost about 7.5 ms per sample, so they are read at most every 5 s.
 /// - With detail on, such as while the Power panel is open: the PMP histograms for the E/P split,
 ///   and performance-state residency for frequencies, every sample.
@@ -19,8 +19,8 @@ public actor PowerCollector: Collector {
         IOReportSubscription.Selection(group: "GPU Stats", subgroup: "GPU Performance States", channels: ["GPUPH"])
     ]
     /// Without detail, power is read at most this often. Each read averages the whole interval,
-    /// so no energy is missed. At 1 s, the Power item put Pulse over its 0.5% CPU budget.
-    private static let summaryInterval: Duration = .seconds(2)
+    /// so no energy is missed. Faster reads put Pulse over its 0.5% CPU budget once history was on.
+    private static let summaryInterval: Duration = .seconds(3)
     private static let fallbackInterval: Duration = .seconds(5)
 
     /// One subscription and its previous sample.

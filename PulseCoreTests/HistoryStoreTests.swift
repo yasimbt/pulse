@@ -109,7 +109,7 @@ private func withCPU(_ snapshot: Snapshot, _ total: Double) -> Snapshot {
         let rows = (0..<count).map { HistoryRow(time: now.addingTimeInterval(-Double(count - $0) * step), values: all) }
         try database.insert(rows, into: tier)
     }
-    // Process snapshots: 11 processes every 10 s for a day, 15 per minute for 30 days.
+    // Process snapshots: 11 processes per snapshot for a day, 15 per minute for 30 days.
     for tier in ProcessTier.allCases {
         let perSnapshot = tier == .tenSeconds ? 11 : 15
         let count = Int(tier.retention / tier.spacing)
@@ -163,8 +163,8 @@ private func snapshotRow(_ second: Int, _ pid: Int32, cpu: Double, memory: UInt6
     #expect(at12.map(\.pid) == [2, 1])
     #expect(at12.first?.time == origin.addingTimeInterval(10))
     #expect(try database.processes(at: origin.addingTimeInterval(5), now: now).map(\.cpuCores) == [0.5])
-    // Nothing near enough, such as across a sleep, gives an empty list rather than stale rows.
-    #expect(try database.processes(at: origin.addingTimeInterval(40), now: now).isEmpty)
+    // Nothing within two intervals, such as across a sleep, gives an empty list rather than stale rows.
+    #expect(try database.processes(at: origin.addingTimeInterval(75), now: origin.addingTimeInterval(80)).isEmpty)
 }
 
 @Test func minuteRowsKeepEachProcessPeakAndOnlyTheTopFives() throws {
@@ -189,7 +189,7 @@ private func snapshotRow(_ second: Int, _ pid: Int32, cpu: Double, memory: UInt6
     #expect(kept.count <= 3 * HistoryDatabase.processesPerRanking)
 }
 
-@Test func storeKeepsOneProcessSnapshotPerTenSeconds() async throws {
+@Test func storeKeepsOneProcessSnapshotPerInterval() async throws {
     let database = try HistoryDatabase.inMemory()
     let store = HistoryStore(database: database)
     let table = ProcessTable(byCPU: [usage(1, cpu: 1)], byMemory: [], byDisk: [], byEnergy: [], unreadableCount: 0)
@@ -198,6 +198,6 @@ private func snapshotRow(_ second: Int, _ pid: Int32, cpu: Double, memory: UInt6
         snapshot.processes = table
         await store.record(snapshot)
     }
-    // Snapshots at 0, 10, 20 and 30 s; flushed at 30 s.
-    #expect(try database.processRowCount(.tenSeconds) == 4)
+    // Snapshots at 0 and 30 s; flushed at 30 s.
+    #expect(try database.processRowCount(.tenSeconds) == 2)
 }

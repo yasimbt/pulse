@@ -148,7 +148,7 @@ Pulse/
 ### M3 — History & timeline (differentiator #2)
 - GRDB store with downsampling and retention as described in §3, plus a migration system.
 - History window: zoomable timeline for all metrics, a scrubber, and a crosshair that shows every value at time T.
-- Store a top-processes snapshot every 10 s so "what spiked at 14:02?" can be answered.
+- Store a top-processes snapshot every 30 s so "what spiked at 14:02?" can be answered. (Originally 10 s; changed in M3 because each scan costs about 5 ms of CPU and 10 s put Pulse over its 0.5% budget.)
 - Survives restarts. Shows a gap marker for periods when the Mac was asleep or off.
 
 **Accept:** the database stays below 200 MB after 30 days at default settings, and the timeline renders 24 h of data in < 300 ms.

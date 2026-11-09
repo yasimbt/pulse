@@ -119,7 +119,7 @@ public actor Sampler {
         return snapshot
     }
 
-    /// About 5 ms of CPU per scan on the M5, so 0.05% at one every 10 s.
+    /// About 5 ms of CPU per scan on the M5, so about 0.017% at one every 30 s.
     private func processHistoryIsDue() -> Bool {
         guard demand.processHistory else { return false }
         guard let lastProcessScan else { return true }

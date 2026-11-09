@@ -33,12 +33,13 @@ public struct ProcessSnapshotRow: Sendable, Equatable {
     }
 }
 
-/// Process snapshots: every 10 s for 24 h, then each minute's peaks for 30 days.
+/// Process snapshots: every `HistoryStore.processInterval` for 24 h, then each minute's peaks for
+/// 30 days. The first table's name dates from a 10 s interval; renaming it would need a migration.
 enum ProcessTier: String, CaseIterable {
     case tenSeconds = "processes_10s"
     case minute = "processes_1m"
 
-    var spacing: TimeInterval { self == .tenSeconds ? 10 : 60 }
+    var spacing: TimeInterval { self == .tenSeconds ? HistoryStore.processInterval : 60 }
     var retention: TimeInterval { self == .tenSeconds ? 86400 : 30 * 86400 }
 }
 
@@ -108,7 +109,7 @@ extension HistoryDatabase {
         }
     }
 
-    /// The stored snapshot nearest before `time`: 10 s snapshots within the last day, minute peaks
+    /// The stored snapshot nearest before `time`: full snapshots within the last day, minute peaks
     /// before that. Empty when nothing was recorded close to that time, such as during sleep.
     public func processes(at time: Date, now: Date = Date()) throws -> [ProcessSnapshotRow] {
         let tier: ProcessTier = time >= now.addingTimeInterval(-ProcessTier.tenSeconds.retention) ? .tenSeconds : .minute
