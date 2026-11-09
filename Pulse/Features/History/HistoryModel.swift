@@ -65,6 +65,12 @@ final class HistoryModel {
         Self.groups.filter { group in group.lines.contains { !(drawn[$0.series] ?? []).isEmpty } }
     }
 
+    /// Moves the range by a fraction of its width: negative is earlier. Stops at now and at the
+    /// oldest data kept.
+    func step(by fraction: Double) {
+        offset = (offset - fraction * span).clamped(to: 0...(Self.spanRange.upperBound - span))
+    }
+
     func zoom(by factor: Double) {
         span = (span / factor).clamped(to: Self.spanRange)
     }

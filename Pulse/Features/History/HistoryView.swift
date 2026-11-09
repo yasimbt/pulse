@@ -23,26 +23,58 @@ struct HistoryView: View {
     }
 
     private var controls: some View {
-        HStack(spacing: 12) {
-            Picker("Range", selection: $model.span) {
-                ForEach(Self.spanTitles, id: \.0) { Text($0.1).tag($0.0) }
-                if !Self.spanTitles.contains(where: { $0.0 == model.span }) {
-                    Text(MetricFormat.duration(model.span)).tag(model.span)
+        VStack(spacing: 10) {
+            HStack(spacing: 12) {
+                Picker("Show", selection: $model.span) {
+                    ForEach(Self.spanTitles, id: \.0) { Text($0.1).tag($0.0) }
+                    if !Self.spanTitles.contains(where: { $0.0 == model.span }) {
+                        Text(MetricFormat.duration(model.span)).tag(model.span)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .frame(width: 320)
+                Spacer()
+                // Step through time by half a range, so that each step keeps some context.
+                Button { model.step(by: -0.5) } label: { Image(systemName: "chevron.left") }
+                    .help("Earlier")
+                    .accessibilityLabel("Earlier")
+                Text(rangeTitle)
+                    .font(.callout.weight(.medium))
+                    .monospacedDigit()
+                    .frame(minWidth: 220)
+                Button { model.step(by: 0.5) } label: { Image(systemName: "chevron.right") }
+                    .help("Later")
+                    .accessibilityLabel("Later")
+                    .disabled(model.offset == 0)
+                Button("Now") { model.offset = 0 }
+                    .disabled(model.offset == 0)
+            }
+            // The scrubber, for jumping anywhere in the 30 days that are kept.
+            HStack(spacing: 8) {
+                Text("30 days ago").font(.caption).foregroundStyle(.secondary)
+                Slider(value: Binding(get: { -model.offset }, set: { model.offset = -$0 }), in: -(30 * 86400 - model.span)...0)
+                    .controlSize(.small)
+                    .accessibilityLabel("Position in history")
+                    .accessibilityValue(model.offset == 0 ? "Now" : "\(MetricFormat.duration(model.offset)) ago")
+                Text("Now").font(.caption).foregroundStyle(.secondary)
+                if let milliseconds = model.lastLoadMilliseconds {
+                    Text("\(Int(milliseconds)) ms").font(.caption2).foregroundStyle(.tertiary).monospacedDigit()
+                        .help("Time to read and prepare this range")
                 }
             }
-            .pickerStyle(.segmented)
-            .frame(width: 320)
-            // The scrubber: drag through the last 30 days. Right is now.
-            Slider(value: Binding(get: { -model.offset }, set: { model.offset = -$0 }), in: -(30 * 86400 - model.span)...0)
-                .accessibilityLabel("Time")
-                .accessibilityValue(model.offset == 0 ? "Now" : "\(MetricFormat.duration(model.offset)) ago")
-            Button("Now") { model.offset = 0 }
-                .disabled(model.offset == 0)
-            if let milliseconds = model.lastLoadMilliseconds {
-                Text("\(Int(milliseconds)) ms").font(.caption).foregroundStyle(.secondary).monospacedDigit()
-                    .help("Time to read and prepare this range")
-            }
         }
+    }
+
+    /// The visible range, such as "9 Nov, 21:05 – 22:05" or "2 Nov – 9 Nov".
+    private var rangeTitle: String {
+        let range = model.range
+        if model.span > 86400 {
+            let day = Date.FormatStyle.dateTime.day().month(.abbreviated)
+            return "\(range.lowerBound.formatted(day)) – \(range.upperBound.formatted(day))"
+        }
+        let time = Date.FormatStyle.dateTime.hour().minute()
+        let day = range.lowerBound.formatted(.dateTime.day().month(.abbreviated))
+        return "\(day), \(range.lowerBound.formatted(time)) – \(range.upperBound.formatted(time))"
     }
 
     private var charts: some View {
@@ -78,8 +110,14 @@ struct TimelineChart: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(group.id).font(.headline)
+        VStack(alignment: .leading, spacing: 10) {
+            // The title on its own row, clear of the axis labels, with the newest value beside it.
+            HStack(alignment: .firstTextBaseline) {
+                Text(group.id).font(.headline)
+                Spacer()
+                Text(latest).font(.callout).foregroundStyle(.secondary).monospacedDigit()
+            }
+            .padding(.trailing, 8)
             Chart {
                 ForEach(model.gaps, id: \.lowerBound) { gap in
                     RectangleMark(xStart: .value("From", gap.lowerBound), xEnd: .value("To", gap.upperBound))
@@ -122,6 +160,16 @@ struct TimelineChart: View {
             .accessibilityElement()
             .accessibilityLabel("\(group.id) history")
         }
+    }
+
+    /// The newest value of each line in range, such as "Down 1.2 KB/s · Up 300 B/s".
+    private var latest: String {
+        group.lines.compactMap { line in
+            guard let value = model.drawn[line.series]?.last?.value else { return nil }
+            let text = HistoryFormat.value(value, group.scale)
+            return group.lines.count > 1 ? "\(line.name) \(text)" : text
+        }
+        .joined(separator: " · ")
     }
 
     /// Hours and minutes up to a day; dates beyond, where the time of day means little.
