@@ -1,6 +1,7 @@
 // Accuracy check helper: reads Pulse's own PowerCollector, or runs a GPU load.
 //   pulse-power measure S   average CPU, GPU and cluster watts over S one-second samples
 //   pulse-power gpu-load S  keep the GPU busy with a Metal compute kernel for S seconds
+//   pulse-power cpu-load S  keep every CPU core busy with floating-point maths for S seconds
 // Built and run by run.sh.
 import Foundation
 import Metal
@@ -14,6 +15,7 @@ struct PulsePower {
         switch arguments.first {
         case "measure": try await measure(seconds: Int(seconds))
         case "gpu-load": try gpuLoad(seconds: seconds)
+        case "cpu-load": cpuLoad(seconds: seconds)
         default: print("usage: pulse-power measure|gpu-load SECONDS")
         }
     }
@@ -34,6 +36,22 @@ struct PulsePower {
         }
         func mean(_ values: [Double]) -> String { String(format: "%.3f", values.reduce(0, +) / Double(values.count)) }
         print("pulse_cpu=\(mean(cpu)) pulse_gpu=\(mean(gpu)) pulse_e=\(mean(efficiency)) pulse_p=\(mean(performance))")
+    }
+
+    /// Floating-point work on every core. Unlike `yes`, which mostly waits in the kernel, this keeps
+    /// each core's execution units busy, so it draws real power and heats the chip.
+    static func cpuLoad(seconds: Double) {
+        let end = Date().addingTimeInterval(seconds)
+        let cores = ProcessInfo.processInfo.activeProcessorCount
+        DispatchQueue.concurrentPerform(iterations: cores) { index in
+            var values = (0..<64).map { Double($0 + index) * 0.001 }
+            while Date() < end {
+                for _ in 0..<200_000 {
+                    for lane in 0..<values.count { values[lane] = values[lane] * 1.000_000_1 + 0.000_000_1 }
+                }
+            }
+            if values.reduce(0, +) == 42 { print("unlikely") }
+        }
     }
 
     /// A long arithmetic loop per thread, dispatched repeatedly until time runs out.

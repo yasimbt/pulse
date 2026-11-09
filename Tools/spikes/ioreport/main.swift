@@ -149,6 +149,30 @@ if CommandLine.arguments.dropFirst().first == "time" {
     exit(0)
 }
 
+// `ior states GROUP SECONDS`: residency of every state channel in one group over an interval.
+if CommandLine.arguments.dropFirst().first == "states" {
+    let group = CommandLine.arguments.dropFirst(2).first ?? "PPM Stats"
+    let span = Double(CommandLine.arguments.dropFirst(3).first ?? "5") ?? 5
+    guard let found = copyChannels(group as CFString, nil, 0, 0, 0)?.takeRetainedValue() else { fatalError("no group") }
+    var subbed: Unmanaged<CFMutableDictionary>?
+    guard let sub = createSubscription(nil, found, &subbed, 0, nil), let chans = subbed?.takeRetainedValue() else { fatalError("subscription") }
+    let first = createSamples(sub, chans, nil)!.takeRetainedValue()
+    Thread.sleep(forTimeInterval: span)
+    let second = createSamples(sub, chans, nil)!.takeRetainedValue()
+    let change = createDelta(first, second, nil)!.takeRetainedValue() as NSDictionary
+    for item in change["IOReportChannels"] as? [NSDictionary] ?? [] {
+        let channel = item as CFDictionary
+        guard getFormat(channel) == 2 else { continue }
+        let count = getStateCount(channel)
+        let values = (0..<count).map { (str(getStateName(channel, $0)).trimmingCharacters(in: .whitespaces), getResidency(channel, $0)) }
+        let total = values.reduce(Int64(0)) { $0 + $1.1 }
+        guard total > 0 else { continue }
+        let shares = values.filter { $0.1 > 0 }.map { String(format: "%@=%.0f%%", $0.0 as NSString, Double($0.1) / Double(total) * 100) }
+        print("  \(str(getSubGroup(channel))) / \(str(getName(channel))): \(shares.joined(separator: " "))")
+    }
+    exit(0)
+}
+
 // `ior calibrate S`: over S seconds, print Energy Model energy (J) next to the PMP histogram sums
 // (sum of bucket watts x event count). Run with powermetrics active so Energy Model counts.
 if CommandLine.arguments.dropFirst().first == "calibrate" {
