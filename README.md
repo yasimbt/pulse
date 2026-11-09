@@ -90,12 +90,28 @@ xcodebuild -scheme Pulse -configuration Release -destination 'platform=macOS,arc
 
 Details are in [`docs/signing.md`](docs/signing.md). Test builds are attached to [GitHub Releases](https://github.com/yasimbt/pulse/releases).
 
+## Command line
+
+Pulse includes `pulse-cli`, which prints the same metrics in the terminal:
+
+```bash
+/Applications/Pulse.app/Contents/MacOS/pulse-cli               # readable summary
+/Applications/Pulse.app/Contents/MacOS/pulse-cli --json        # JSON, SI units
+/Applications/Pulse.app/Contents/MacOS/pulse-cli --prometheus  # Prometheus text format
+/Applications/Pulse.app/Contents/MacOS/pulse-cli --watch 5     # repeat every 5 s
+```
+
+To type just `pulse-cli`, link it onto your `PATH`, for example
+`ln -s /Applications/Pulse.app/Contents/MacOS/pulse-cli ~/.local/bin/pulse-cli`.
+From a source checkout, `make cli` builds and runs it.
+
 ## Project layout
 
 | Path | Contents |
 |---|---|
 | `Pulse/` | The app: menu-bar items, panels and settings (SwiftUI and AppKit) |
 | `PulseCore/` | Data collection and calculations, with no UI code |
+| `PulseCLI/` | `pulse-cli`, the command-line tool, which ships inside Pulse.app |
 | `PulseCoreTests/` | Unit tests, using data recorded from a real Mac in `Fixtures/` |
 | `Tools/spikes/` | Small command-line programs used to check a data source before relying on it |
 | `docs/` | Findings and measurements from each milestone |

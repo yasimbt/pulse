@@ -6,7 +6,7 @@ DERIVED     := build
 DESTINATION := platform=macOS,arch=arm64
 APP         := $(DERIVED)/Build/Products/Debug/Pulse.app
 
-.PHONY: generate build test run lint clean
+.PHONY: generate build test run lint clean cli
 
 generate:
 	$(XCODEGEN) generate --quiet
@@ -20,6 +20,11 @@ test: generate
 run: build
 	@pkill -x Pulse || true
 	open $(APP)
+
+# Prints current metrics with the command-line tool built into Pulse.app. Pass options with
+# ARGS, for example: make cli ARGS="--prometheus".
+cli: build
+	$(APP)/Contents/MacOS/pulse-cli $(ARGS)
 
 lint:
 	$(SWIFTLINT) lint --quiet

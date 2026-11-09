@@ -32,6 +32,12 @@ targets:
       - path: Pulse
     dependencies:
       - target: PulseCore
+      # The command-line tool ships inside the app, next to its executable, so that it finds the
+      # framework the app bundles.
+      - target: pulse-cli
+        embed: true
+        copy:
+          destination: executables
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.pulse.app
@@ -53,6 +59,22 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.pulse.core
         GENERATE_INFOPLIST_FILE: YES
         DEFINES_MODULE: YES
+
+  pulse-cli:
+    type: tool
+    platform: macOS
+    sources:
+      - path: PulseCLI
+    dependencies:
+      - target: PulseCore
+        embed: false
+    settings:
+      base:
+        PRODUCT_NAME: pulse-cli
+        # Inside Pulse.app (Contents/MacOS), the framework is in ../Frameworks; in a build folder,
+        # it sits next to the tool.
+        LD_RUNPATH_SEARCH_PATHS: "@executable_path/../Frameworks @executable_path"
+        ENABLE_HARDENED_RUNTIME: YES
 
   PulseCoreTests:
     type: bundle.unit-test
