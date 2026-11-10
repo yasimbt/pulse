@@ -65,10 +65,10 @@ throttling detection. With the panels closed it uses about 0.5% CPU and 25-40 MB
 
 ## Install
 
-There's no download yet, so for now [build it from source](#build-and-run). Test builds will be
-attached to the [Releases page](https://github.com/yasimbt/pulse/releases).
+Download the latest test build, `Pulse-<version>-arm64.zip`, from the
+[Releases page](https://github.com/yasimbt/pulse/releases), or [build it from source](#build-and-run).
 
-Those builds aren't signed with an Apple Developer ID, so macOS warns that it can't check them for
+Test builds aren't signed with an Apple Developer ID, so macOS warns that it can't check them for
 malware. To open one the first time:
 
 1. Unzip the download and drag **Pulse** into your **Applications** folder.
