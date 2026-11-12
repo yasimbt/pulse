@@ -1,0 +1,46 @@
+# Spike: does a WidgetKit widget load from an ad-hoc signed app, and can it share an App Group
+# container with the app? Build: see README.md in this folder.
+name: WidgetSpike
+options:
+  bundleIdPrefix: com.pulse.spike
+  deploymentTarget:
+    macOS: "14.0"
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    ARCHS: arm64
+    CODE_SIGN_STYLE: Manual
+    CODE_SIGN_IDENTITY: "-"
+    DEVELOPMENT_TEAM: ""
+targets:
+  WidgetSpikeHost:
+    type: application
+    platform: macOS
+    sources: [Host]
+    dependencies:
+      - target: WidgetSpikeWidget
+        embed: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.pulse.spike.host
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_LSUIElement: YES
+  WidgetSpikeWidget:
+    type: app-extension
+    platform: macOS
+    sources: [Widget]
+    entitlements:
+      path: Widget/Widget.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        # Lets the widget fetch from Pulse's localhost endpoint, since App Groups need a profile.
+        com.apple.security.network.client: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.pulse.spike.host.widget
+    info:
+      path: Widget/Info.plist
+      properties:
+        CFBundleDisplayName: Pulse Spike
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension

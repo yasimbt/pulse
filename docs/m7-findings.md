@@ -38,3 +38,15 @@ System Settings pane that holds the menu bar settings on macOS 27.2
 (`/System/Library/ExtensionKit/Extensions/ControlCenterSettings.appex`). Pulse doesn't detect whether
 its own item is hidden: its status item windows belong to MenuBarAgent (docs/m1-findings.md), and no
 reliable signal was found, so it explains rather than detects.
+
+## Widgets spike (`Tools/spikes/widget`, results so far)
+A separate XcodeGen project with a host app and a WidgetKit extension, both ad-hoc signed.
+- **App Groups need a provisioning profile.** With `com.apple.security.application-groups`, Xcode
+  refuses to build: "requires a provisioning profile". So the spec's shared App Group store needs an
+  Apple Developer account, like notarization.
+- Without the App Group (sandbox plus `com.apple.security.network.client`), it builds, and
+  macOS registers the widget: `pluginkit -m -p com.apple.widgetkit-extension` lists
+  `com.pulse.spike.host.widget`.
+- The widget tries Pulse's localhost endpoint (`http://127.0.0.1:9466/metrics.json`) as a way to get
+  data without an App Group. Whether it appears in the widget gallery and can reach the endpoint
+  from its sandbox is still to be checked on screen.
