@@ -54,7 +54,8 @@ throttling detection. With the panels closed it uses about 0.5% CPU and 25-40 MB
 ## Requirements
 
 - A Mac with Apple Silicon (M1 or later). Intel Macs are not supported.
-- macOS 14 Sonoma or later. Power readings without root are verified on an M5 with macOS 27; on
+- macOS 14 Sonoma or later. Power readings without root are verified on an M5 with macOS 27, and
+  cluster activity and frequencies also read on an M6 ([findings](docs/apple-m6-findings.md)); on
   other chips Pulse falls back to slower readings, or hides what it can't verify.
 - To build: Xcode with Swift 6 (development uses Xcode 27.2 on macOS 27.2), plus
   [XcodeGen](https://github.com/yonaskolb/XcodeGen) and [SwiftLint](https://github.com/realm/SwiftLint):

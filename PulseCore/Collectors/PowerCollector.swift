@@ -101,8 +101,7 @@ public actor PowerCollector: Collector {
 
     /// Read once: the tables are fixed for the chip.
     private static func readFrequencyTables() -> FrequencyTables {
-        let service = IOServiceGetMatchingService(kIOMainPortDefault, IOServiceNameMatching("pmgr"))
-        guard service != 0 else { return FrequencyTables(voltageStates: [:]) }
+        guard let service = powerManager() else { return FrequencyTables(voltageStates: [:]) }
         defer { IOObjectRelease(service) }
         let keys = FrequencyTables.keys
         var words: [String: [UInt32]] = [:]
@@ -112,5 +111,26 @@ public actor PowerCollector: Collector {
             words[key] = FrequencyTables.words(data)
         }
         return FrequencyTables(voltageStates: words)
+    }
+
+    /// The registry node that holds the tables: `pmgr` on the M5, `pmgr-child` on the M6. Takes the
+    /// first device whose name starts with `pmgr` and that has the performance table. The caller
+    /// releases it.
+    private static func powerManager() -> io_service_t? {
+        var iterator: io_iterator_t = 0
+        guard IOServiceGetMatchingServices(kIOMainPortDefault, IOServiceMatching("AppleARMIODevice"), &iterator) == KERN_SUCCESS else {
+            return nil
+        }
+        defer { IOObjectRelease(iterator) }
+        while case let service = IOIteratorNext(iterator), service != 0 {
+            var name = [CChar](repeating: 0, count: 128)
+            if IORegistryEntryGetName(service, &name) == KERN_SUCCESS, String(cString: name).hasPrefix("pmgr"),
+               let table = IORegistryEntryCreateCFProperty(service, FrequencyTables.keys.performance as CFString, kCFAllocatorDefault, 0) {
+                table.release()
+                return service
+            }
+            IOObjectRelease(service)
+        }
+        return nil
     }
 }

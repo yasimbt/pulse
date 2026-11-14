@@ -80,6 +80,60 @@ private func close(_ value: Double?, _ expected: Double, relative: Double = 1e-9
     #expect(sample.totalWatts < 0.5)
 }
 
+/// Recorded on the M6 (macOS 27.2.1) with `ior dump 2`: idle, and with 6 busy loops, which fill
+/// both PCPU cores and all four MCPU cores. Expected values were computed separately in Python.
+@Test func m6LoadFixtureCountsMCPUCoresInThePerformanceCluster() throws {
+    let fixture = try PowerFixture.load("ioreport-power-m6-load")
+    let sample = fixture.sample
+    let performance = try #require(sample.cluster(.performance))
+    let efficiency = try #require(sample.cluster(.efficiency))
+    #expect(close(performance.watts, 15.968400738776285, relative: 1e-8))
+    #expect(close(efficiency.watts, 0.161428414472438, relative: 1e-8))
+    #expect(close(performance.activeFraction, 0.9989302398337685))
+    #expect(close(performance.frequencyHz, 4788e6))
+    #expect(close(efficiency.activeFraction, 0.12495948784225254))
+    #expect(close(efficiency.frequencyHz, 1469.537565959049e6))
+    #expect(close(sample.gpuWatts, 0.010077901))
+    #expect(close(sample.gpuActiveFraction, 0.04440870453325558))
+    // Six PACC0 cores (2 PCPU + 4 MCPU) and six EACC cores.
+    let cores = fixture.readings.filter { $0.subgroup == "CPU Core Performance States" }
+    #expect(cores.filter { PowerCalculations.clusterKind(coreChannel: $0.channel) == .performance }.count == 6)
+    #expect(cores.filter { PowerCalculations.clusterKind(coreChannel: $0.channel) == .efficiency }.count == 6)
+}
+
+@Test func m6IdleFixtureGivesSmallWatts() throws {
+    let sample = try PowerFixture.load("ioreport-power-m6-idle").sample
+    #expect(close(sample.cluster(.efficiency)?.watts, 0.08674074635347608, relative: 1e-8))
+    #expect(close(sample.cluster(.performance)?.watts, 0.14764159878764918, relative: 1e-8))
+    #expect(close(sample.cluster(.performance)?.activeFraction, 0.002191444628692642))
+    #expect(close(sample.cluster(.performance)?.frequencyHz, 2526.5518776856957e6))
+    #expect(close(sample.cluster(.efficiency)?.frequencyHz, 1340.0263262939045e6))
+    #expect(sample.totalWatts < 0.5)
+}
+
+@Test func m6FrequencyTablesMatchItsResidencyStates() throws {
+    let tables = FrequencyTables(voltageStates: try PowerFixture.load("ioreport-power-m6-idle").voltageStates)
+    #expect(tables.efficiency.count == 7)
+    #expect(tables.efficiency.first == 972e6 && tables.efficiency.last == 2940e6)
+    #expect(tables.performance.count == 20)
+    #expect(tables.performance.first == 1440e6 && tables.performance.last == 4788e6)
+    #expect(tables.gpu.count == 13)
+}
+
+@Test func coreChannelNamesFromEachChipMapToClusters() {
+    // M5: core names alone.
+    #expect(PowerCalculations.clusterKind(coreChannel: "ECPU0") == .efficiency)
+    #expect(PowerCalculations.clusterKind(coreChannel: "PCPU3") == .performance)
+    // M6: cluster prefix, then core. MCPU cores share PACC0 with the PCPU cores.
+    #expect(PowerCalculations.clusterKind(coreChannel: "EACC_ECPU5") == .efficiency)
+    #expect(PowerCalculations.clusterKind(coreChannel: "PACC0_PCPU0") == .performance)
+    #expect(PowerCalculations.clusterKind(coreChannel: "PACC0_MCPU2") == .performance)
+    // Chips with two performance clusters.
+    #expect(PowerCalculations.clusterKind(coreChannel: "PACC1_PCPU4") == .performance)
+    // Unknown names are left out rather than guessed.
+    #expect(PowerCalculations.clusterKind(coreChannel: "XCPU0") == nil)
+}
+
 @Test func mismatchedFrequencyTableHidesFrequencyButKeepsWatts() throws {
     let fixture = try PowerFixture.load("ioreport-power-m5-load")
     // A table with the wrong number of states, as on a chip whose registry keys differ.

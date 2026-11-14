@@ -39,8 +39,8 @@ public struct FrequencyTables: Sendable, Equatable {
     public let performance: [Double]
     public let gpu: [Double]
 
-    /// Registry keys confirmed against powermetrics on the M5. Other chips are unverified, and a
-    /// table whose length doesn't match the residency states is ignored.
+    /// Registry keys confirmed against powermetrics on the M5, and present with matching lengths on
+    /// the M6. Other chips are unverified, and a table whose length doesn't match the residency states is ignored.
     public static let keys = (efficiency: "voltage-states1-sram", performance: "voltage-states5-sram", gpu: "voltage-states9")
 
     public init(efficiency: [Double], performance: [Double], gpu: [Double]) {
@@ -214,9 +214,16 @@ public enum PowerCalculations {
         return nil
     }
 
+    /// Core residency channels are named by core alone (`ECPU0`, `PCPU3` on the M5) or by cluster
+    /// and core (`EACC_ECPU0`, `PACC0_PCPU0`, `PACC0_MCPU2` on the M6). The cluster prefix wins
+    /// when there is one: power and frequency are per cluster, so the M6's `MCPU` cores count with
+    /// the `PCPU` cores they share `PACC0` with. Unknown names are left out rather than guessed.
     static func clusterKind(coreChannel name: String) -> ClusterPower.Kind? {
-        if name.hasPrefix("ECPU") { return .efficiency }
-        if name.hasPrefix("PCPU") { return .performance }
+        let parts = name.split(separator: "_").map(String.init)
+        if parts.count > 1, let cluster = clusterKind(energyChannel: parts[0]) { return cluster }
+        let core = parts.last ?? name
+        if core.hasPrefix("ECPU") { return .efficiency }
+        if core.hasPrefix("PCPU") || core.hasPrefix("MCPU") { return .performance }
         return nil
     }
 

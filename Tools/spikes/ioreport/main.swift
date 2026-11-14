@@ -41,10 +41,28 @@ func str(_ value: Unmanaged<CFString>?) -> String { value.map { $0.takeUnretaine
 
 // MARK: - DVFS tables from the power manager node in the IORegistry
 
+// The tables are on `pmgr` on the M5 and on `pmgr-child` on the M6 (where `pmgr` has none), so take
+// the first device whose name starts with `pmgr` and that has the performance table.
+func powerManager() -> io_service_t {
+    var iterator: io_iterator_t = 0
+    guard IOServiceGetMatchingServices(kIOMainPortDefault, IOServiceMatching("AppleARMIODevice"), &iterator) == KERN_SUCCESS else { return 0 }
+    defer { IOObjectRelease(iterator) }
+    while case let service = IOIteratorNext(iterator), service != 0 {
+        var name = [CChar](repeating: 0, count: 128)
+        if IORegistryEntryGetName(service, &name) == KERN_SUCCESS, String(cString: name).hasPrefix("pmgr"),
+           let table = IORegistryEntryCreateCFProperty(service, "voltage-states5-sram" as CFString, kCFAllocatorDefault, 0) {
+            table.release()
+            return service
+        }
+        IOObjectRelease(service)
+    }
+    return 0
+}
+
 func printFrequencyTables() {
     print("== pmgr voltage-states (frequency tables)")
-    let service = IOServiceGetMatchingService(kIOMainPortDefault, IOServiceNameMatching("pmgr"))
-    guard service != 0 else { print("no pmgr service"); return }
+    let service = powerManager()
+    guard service != 0 else { print("no pmgr node with voltage-states"); return }
     defer { IOObjectRelease(service) }
     var props: Unmanaged<CFMutableDictionary>?
     guard IORegistryEntryCreateCFProperties(service, &props, kCFAllocatorDefault, 0) == KERN_SUCCESS,
@@ -256,7 +274,7 @@ if CommandLine.arguments.dropFirst().first == "dump" {
         readings.append(reading)
     }
     var tables: [String: [UInt32]] = [:]
-    let service = IOServiceGetMatchingService(kIOMainPortDefault, IOServiceNameMatching("pmgr"))
+    let service = powerManager()
     var props: Unmanaged<CFMutableDictionary>?
     if service != 0, IORegistryEntryCreateCFProperties(service, &props, kCFAllocatorDefault, 0) == KERN_SUCCESS,
        let dict = props?.takeRetainedValue() as? [String: Any] {
