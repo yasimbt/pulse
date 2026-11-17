@@ -1,6 +1,7 @@
 # Plan: GPU module and panel
 
-Status: draft, revised after review (pulse.review, 2026-11-17, against fd1d3ab). Nothing is built yet.
+Status: revised after review (pulse.review, 2026-11-17, against fd1d3ab) and after the spike
+([`gpu-findings.md`](gpu-findings.md)). Steps 0 and 1 are done (v0.6.2, `Tools/spikes/gpu`).
 
 ## Goal
 Add a **GPU** module that works like CPU: a menu-bar item (text, sparkline, bar or gauge), and a
@@ -57,36 +58,44 @@ client-opened}.json`) and write `docs/gpu-findings.md`. **Questions the spike an
 - Cost per read, against the remaining budget. M1 measured 0.375% with 5 modules
   (m1-findings.md), so about 0.125% is left before history and power are counted.
 
+**What the spike changed** (details in gpu-findings.md):
+- "GPU usage" is the **sum of every client's `accumulatedGPUTime` change** over the interval
+  (nanoseconds), capped at 1. It matches Activity Monitor. Device Utilization is an instant value
+  the driver refreshes about every 50 ms, so it is dropped, with the renderer and tiler figures.
+- `AppUsage` has one entry per command queue, and a client's total falls when a queue closes.
+  Keying by client registry ID is still right, but a fall counts as 0 for that interval. A client
+  first seen after the first scan counts its whole total, as it is new since the last read.
+- The client walk feeds both the headline and the per-process rows, so one `GPUCollector` does
+  both, and `GPUProcessCollector` is dropped. Cost: about 0.27 ms per sample (0.03% at 1 s).
+
 ### 2. Core model and collectors (`PulseCore`)
 - `ModuleKind.gpu` (title "GPU", short label "GPU"). `PulseSettings.default` lists it disabled
   after Power. `normalized()` already appends new kinds as disabled for existing users.
-- `GPUSample` in a new `Models/GPUSamples.swift`: `utilization`, `rendererUtilization`,
-  `tilerUtilization` (0...1), `memoryInUseBytes`, `memoryAllocatedBytes`, `coreCount`, `model`.
+- `GPUSample` in a new `Models/GPUSamples.swift`: `usage` (0...1, from GPU time),
+  `memoryInUseBytes`, `memoryAllocatedBytes`, `coreCount`, `model`, and `processes`
+  (`[GPUProcessUsage]`: pid, name, usage), sorted, top 5.
 - `Collectors/GPUCollector.swift` (actor): matches the `IOAccelerator` service once, keeps the
-  `io_service_t` and releases it in `deinit`. Reads only the `PerformanceStatistics` key with
-  `IORegistryEntryCreateCFProperty`, never `…CFProperties`. If the spike shows the driver figure
-  updates slower than about 1 s, the read is rate-limited as `PowerCollector` does. Parsing is in
-  `Analysis/GPUCalculations.swift` (dictionary → `GPUSample`) and tested with fixtures.
-- `Collectors/GPUProcessCollector.swift`, separate from `ProcessCollector` (a different source and
-  cadence; one collector per file):
-  - **Counters are keyed per user client by `IORegistryEntryGetRegistryEntryID`, not per pid.** A
-    client seen for the first time contributes 0. Deltas are taken per client, then summed per pid.
-    This keeps a closing client from making a pid's total go backwards, keeps a new client's
-    lifetime total from showing up as a spike, and handles pid reuse.
-  - Names: `IOUserClientCreator` gives `p_comm`, cut to 16 characters, so use the name from
-    `ProcessCollector`'s table when the pid is in it.
-  - Pure maths (parsing, per-client deltas, per-pid sums) in `GPUCalculations`.
-- `Snapshot.gpu`, `Snapshot.gpuProcesses`. `collectReadings` reads `gpu` when the module is
-  enabled, the GPU panel is open, or the HUD is shown.
+  `io_service_t` and releases it in `deinit`. Each sample reads `PerformanceStatistics` with
+  `IORegistryEntryCreateCFProperty` (memory only), never `…CFProperties`, and walks the user
+  clients for `IOUserClientCreator` and `AppUsage`. The first sample only sets the baselines.
+  - Counters are keyed per client by `IORegistryEntryGetRegistryEntryID`. A fall in a client's
+    total counts as 0 (a queue closed). A client new since the last read counts in full. Deltas
+    are summed per pid, then over all clients for `usage`, divided by elapsed time, capped at 1.
+  - Names: `IOUserClientCreator` gives `p_comm`, cut to 16 characters. The app replaces it with
+    the name from `ProcessCollector`'s table when the pid is in it.
+  - Parsing and the delta maths are pure functions in `Analysis/GPUCalculations.swift`, tested
+    with the fixtures.
+- `Snapshot.gpu`. `collectReadings` reads it when the module is enabled, the GPU panel is open,
+  or the HUD is shown.
 - **Detail demand.** `PowerCollector.setDetail(Bool)` becomes an `OptionSet` `{ clusters, gpu }`,
   and the detail `Feed` subscribes only to the selections needed: PMP histograms plus CPU core
   P-states for `.clusters`, `GPUPH` for `.gpu`. `Sampler.Demand.powerDetail` becomes that option
   set. Sampler reads thermal and SMC only for `.clusters`. The 3 s summary cadence still applies
   when only `.gpu` is set, unless the spike shows GPUPH needs every sample. The GPU panel adds
-  `.gpu` and runs the process walk. It does not read temperatures, SMC or the PMP histograms.
+  `.gpu` for frequency and "GPU active". It does not read temperatures, SMC or the PMP histograms.
 
 ### 3. History
-- `SeriesID.gpuUsage` (value: `snapshot.gpu?.utilization`).
+- `SeriesID.gpuUsage` (value: `snapshot.gpu?.usage`).
 - **Migration.** `v1` creates columns from `SeriesID.allCases`, and `insert()`, `rollUp()` and
   `points()` build their column lists from it too. So the column must exist in every tier before
   the first insert, or every series' INSERT fails. Freeze v1's column list as a literal of the
@@ -98,25 +107,24 @@ client-opened}.json`) and write `docs/gpu-findings.md`. **Questions the spike an
 ### 4. App UI (`Pulse`)
 - `ModuleReading.make(.gpu)`: percent text, fraction, series `.gpuUsage`, "GPU 42% used".
 - `StatusBarController`: width template and `.gpuUsage` scale 1.
-- `ModulePanel`: `GPUDetails`: usage; renderer and tiler; frequency vs the table's top
-  (when known); active residency ("GPU active"); GPU watts; memory in use / allocated; model and
-  core count. Chart: one "Used" line (fraction).
+- `ModulePanel`: `GPUDetails`: usage; frequency vs the table's top (when known); "GPU active"
+  residency; GPU watts; memory in use / allocated; model and core count. Chart: one "Used" line (fraction).
 - `TopProcessesView`: "Top processes by GPU", without "Your", as for network: the walk also sees
-  root processes and WindowServer. Value as a percent of the GPU. Hidden (with a note in
-  `docs/gpu-findings.md`) if the spike can't validate the per-process numbers.
+  root processes and WindowServer. Value as a percent of the GPU, as Activity Monitor shows it
+  (the spike confirmed the unit).
 - `AppController.updateDemand`: GPU panel open → `.gpu` detail. `processes: openPanel != nil`
   already runs the CPU process scan too, which counts toward the open-panel cost and supplies the
   full process names.
 - Settings needs no change: it lists `ModuleKind.allCases`, and so do the rules' hidden modules.
 
 ### 5. One meaning of "GPU usage"
-Headline metric: **Device Utilization**, if the spike confirms it matches Activity Monitor. It's
-cheap and needs no detail flag. GPUPH residency is then labelled "GPU active" everywhere:
+Headline metric: **GPU time over all clients** (`GPUSample.usage`), which matches Activity
+Monitor. It's cheap and needs no detail flag. GPUPH residency is then labelled "GPU active" everywhere:
 - Sessions: add an optional `gpuUtilization` to the session sample. Synthesised `Codable` decodes
   a missing optional as nil, so old sessions still load. The existing `gpuUsage` field
   (`Sessions.swift`) stays, labelled "GPU active" in `SessionsView`, `SessionDetailView` and the
   CSV in `SessionExport`. A new "GPU usage" row and CSV column carry utilisation.
-- HUD (`HUDController.swift:96`): show utilisation, and add `.gpu` to the modules
+- HUD (`HUDController.swift:96`): show `GPUSample.usage`, and add `.gpu` to the modules
   `AppController.updateDemand` adds for the HUD. Then check whether the HUD still needs power
   detail at all. It forces it today partly for this row, and dropping it would cut the HUD's cost.
 
@@ -129,8 +137,8 @@ cheap and needs no detail flag. GPUPH residency is then labelled "GPU active" ev
 
 ### 7. Tests, docs, release
 - Unit tests: `PerformanceStatistics` parsing (M6 fixtures, plus missing keys → nil fields);
-  `IOUserClientCreator` pid and name parsing; per-client deltas (a client closes, a new client
-  mid-run, pid reuse, a counter reset); `ModuleReading(.gpu)`; settings normalisation adds `.gpu`
+  `IOUserClientCreator` pid and name parsing; per-client deltas with the churn fixture (a queue
+  closes and the total falls, a new client mid-run, a client disappears), usage capped at 1; `ModuleReading(.gpu)`; settings normalisation adds `.gpu`
   disabled; migration v4 (fresh, upgraded v3, roll-up); old sessions decode without
   `gpuUtilization`; the detail option set picks the right IOReport selections.
 - Measure Pulse's CPU in Release with the GPU module on and every panel closed (M1's method);
@@ -146,5 +154,5 @@ GPU temperature (no sensor identified, see m2-findings), widget changes, GPU mem
 1. The GPU module is its own release with its own SPEC.md entry, separate from M7.
 2. Downgrades matter: lenient settings decoding (step 0) ships first, in a patch release before the
    GPU one.
-3. Relabel approved: Device Utilization is "GPU usage" everywhere, residency becomes "GPU active"
-   (step 5).
+3. Relabel approved: the Activity Monitor-matching figure is "GPU usage" everywhere, residency
+   becomes "GPU active" (step 5). The spike showed that figure is GPU time, not Device Utilization.
