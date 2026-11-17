@@ -87,21 +87,30 @@ public enum MetricsExport {
         return parts.joined(separator: ", ") + "."
     }
 
-    /// The Prometheus text exposition format, version 0.0.4.
+    /// The Prometheus text exposition format, version 0.0.4. All lines of a metric must be
+    /// together, so values are grouped by name, in the order each name first appears.
     public static func prometheus(_ snapshot: Snapshot) -> String {
-        var lines: [String] = []
-        var described = Set<String>()
+        var names: [String] = []
+        var families: [String: [Metric]] = [:]
         for metric in metrics(snapshot) {
-            if described.insert(metric.name).inserted {
-                lines.append("# HELP \(metric.name) \(metric.help)")
-                lines.append("# TYPE \(metric.name) gauge")
-            }
-            let labels = metric.labels.isEmpty ? "" : "{" + metric.labels.keys.sorted().map {
-                "\($0)=\"\(escape(metric.labels[$0] ?? ""))\""
-            }.joined(separator: ",") + "}"
-            lines.append("\(metric.name)\(labels) \(number(metric.value))")
+            if families[metric.name] == nil { names.append(metric.name) }
+            families[metric.name, default: []].append(metric)
+        }
+        var lines: [String] = []
+        for name in names {
+            let family = families[name] ?? []
+            lines.append("# HELP \(name) \(family.first?.help ?? "")")
+            lines.append("# TYPE \(name) gauge")
+            lines += family.map(line)
         }
         return lines.joined(separator: "\n") + "\n"
+    }
+
+    private static func line(_ metric: Metric) -> String {
+        let labels = metric.labels.isEmpty ? "" : "{" + metric.labels.keys.sorted().map {
+            "\($0)=\"\(escape(metric.labels[$0] ?? ""))\""
+        }.joined(separator: ",") + "}"
+        return "\(metric.name)\(labels) \(number(metric.value))"
     }
 
     private struct Entry: Encodable {

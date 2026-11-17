@@ -24,6 +24,28 @@ private func snapshot() -> Snapshot {
     #expect(!text.contains("pulse_memory"))
 }
 
+/// Cluster frequencies and system watts used to land between `pulse_power_watts` lines, which
+/// the 0.0.4 format forbids.
+@Test func prometheusKeepsEachMetricsLinesTogether() {
+    var snapshot = snapshot()
+    snapshot.power = PowerSample(
+        cpuWatts: 12.5,
+        clusters: [
+            ClusterPower(kind: .efficiency, watts: 1, activeFraction: 0.5, frequencyHz: 2e9),
+            ClusterPower(kind: .performance, watts: 11, activeFraction: 0.9, frequencyHz: 4e9)
+        ],
+        gpuWatts: 0.25, aneWatts: nil, gpuActiveFraction: nil, gpuFrequencyHz: nil
+    )
+    snapshot.smc = SMCSample(systemWatts: 30, fans: [])
+    let names = MetricsExport.prometheus(snapshot).split(separator: "\n")
+        .filter { !$0.hasPrefix("#") }
+        .map { String($0.prefix { $0 != "{" && $0 != " " }) }
+    // Each name forms one unbroken run.
+    let runs = zip(names, [""] + names).filter { $0 != $1 }.map(\.0)
+    #expect(runs.count == Set(names).count)
+    #expect(names.filter { $0 == "pulse_power_watts" }.count == 5)
+}
+
 @Test func jsonGroupsValuesByMetric() throws {
     let object = try #require(try JSONSerialization.jsonObject(with: MetricsExport.json(snapshot())) as? [String: Any])
     #expect(object["time"] as? String == "2027-01-15T08:00:00Z")
