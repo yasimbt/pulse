@@ -1,0 +1,313 @@
+{
+  "PerformanceStatistics": {
+    "Alloc system memory": 867221504,
+    "Allocated PB Size": 37748736,
+    "Device Utilization %": 78,
+    "In use system memory": 140787712,
+    "In use system memory (driver)": 0,
+    "Renderer Utilization %": 7,
+    "SplitSceneCount": 0,
+    "TiledSceneBytes": 1310720,
+    "Tiler Utilization %": 0,
+    "lastRecoveryTime": 0,
+    "recoveryCount": 0
+  },
+  "clients": [
+    {
+      "AppUsage": [],
+      "IOUserClientCreator": "pid 427, WindowServer",
+      "id": 4294971630
+    },
+    {
+      "AppUsage": [
+        {
+          "API": "Metal",
+          "accumulatedGPUTime": 115710743833,
+          "lastSubmittedTime": 4924935101791
+        },
+        {
+          "API": "Metal",
+          "accumulatedGPUTime": 5090041,
+          "lastSubmittedTime": 4019363531291
+        }
+      ],
+      "IOUserClientCreator": "pid 427, WindowServer",
+      "id": 4294971631
+    },
+    {
+      "AppUsage": [
+        {
+          "API": "Metal",
+          "accumulatedGPUTime": 5335916,
+          "lastSubmittedTime": 79934196541
+        }
+      ],
+      "IOUserClientCreator": "pid 746, com.example.appl",
+      "id": 4294972226
+    },
+    {
+      "AppUsage": [
+        {
+          "API": "Metal",
+          "accumulatedGPUTime": 11329041,
+          "lastSubmittedTime": 94302065250
+        }
+      ],
+      "IOUserClientCreator": "pid 761, App02",
+      "id": 4294972251
+    },
+    {
+      "AppUsage": [],
+      "IOUserClientCreator": "pid 723, App03",
+      "id": 4294972263
+    },
+    {
+      "AppUsage": [],
+      "IOUserClientCreator": "pid 738, App04",
+      "id": 4294972288
+    },
+    {
+      "AppUsage": [
+        {
+          "API": "Metal",
+          "accumulatedGPUTime": 433344458,
+          "lastSubmittedTime": 4806398870333
+        }
+      ],
+      "IOUserClientCreator": "pid 721, App05",
+      "id": 4294972330
+    },
+    {
+      "AppUsage": [],
+      "IOUserClientCreator": "pid 772, App06",
+      "id": 4294972338
+    },
+    {
+      "AppUsage": [],
+      "IOUserClientCreator": "pid 814, App07",
+      "id": 4294972340
+    },
+    {
+      "AppUsage": [
+        {
+          "API": "Metal",
+          "accumulatedGPUTime": 49581500,
+          "lastSubmittedTime": 4013772650833
+        }
+      ],
+      "IOUserClientCreator": "pid 431, App08",
+      "id": 4294972378
+    },
+    {
+      "AppUsage": [
+        {
+          "API": "Metal",
+          "accumulatedGPUTime": 483081916,
+          "lastSubmittedTime": 4271527272416
+        }
+      ],
+      "IOUserClientCreator": "pid 849, App09",
+      "id": 4294972381
+    },
+    {
+      "AppUsage": [],
+      "IOUserClientCreator": "pid 726, App10",
+      "id": 4294972413
+    },
+    {
+      "AppUsage": [],
+      "IOUserClientCreator": "pid 871, App11",
+      "id": 4294972416
+    },
+    {
+      "AppUsage": [],
+      "IOUserClientCreator": "pid 432, App12",
+      "id": 4294972421
+    },
+    {
+      "AppUsage": [],
+      "IOUserClientCreator": "pid 878, App13",
+      "id": 4294972440
+    },
+    {
+      "AppUsage": [],
+      "IOUserClientCreator": "pid 903, App14",
+      "id": 4294972446
+    },
+    {
+      "AppUsage": [
+        {
+          "API": "Metal",
+          "accumulatedGPUTime": 9167958,
+          "lastSubmittedTime": 1524144398708
+        }
+      ],
+      "IOUserClientCreator": "pid 832, App15",
+      "id": 4294972474
+    },
+    {
+      "AppUsage": [],
+      "IOUserClientCreator": "pid 933, App16",
+      "id": 4294972499
+    },
+    {
+      "AppUsage": [],
+      "IOUserClientCreator": "pid 929, App17",
+      "id": 4294972509
+    },
+    {
+      "AppUsage": [
+        {
+          "API": "Metal",
+          "accumulatedGPUTime": 2076125,
+          "lastSubmittedTime": 84171765958
+        }
+      ],
+      "IOUserClientCreator": "pid 747, App18",
+      "id": 4294972536
+    },
+    {
+      "AppUsage": [],
+      "IOUserClientCreator": "pid 769, App19",
+      "id": 4294972537
+    },
+    {
+      "AppUsage": [],
+      "IOUserClientCreator": "pid 920, App20",
+      "id": 4294972558
+    },
+    {
+      "AppUsage": [],
+      "IOUserClientCreator": "pid 536, App21",
+      "id": 4294972617
+    },
+    {
+      "AppUsage": [],
+      "IOUserClientCreator": "pid 1189, App07",
+      "id": 4294972627
+    },
+    {
+      "AppUsage": [
+        {
+          "API": "Metal",
+          "accumulatedGPUTime": 89313805166,
+          "lastSubmittedTime": 4954618868041
+        }
+      ],
+      "IOUserClientCreator": "pid 1260, App22",
+      "id": 4294972710
+    },
+    {
+      "AppUsage": [],
+      "IOUserClientCreator": "pid 1299, App23",
+      "id": 4294972714
+    },
+    {
+      "AppUsage": [
+        {
+          "API": "Metal",
+          "accumulatedGPUTime": 1332826291,
+          "lastSubmittedTime": 250048145333
+        }
+      ],
+      "IOUserClientCreator": "pid 1686, App24",
+      "id": 4294972808
+    },
+    {
+      "AppUsage": [],
+      "IOUserClientCreator": "pid 1965, App25",
+      "id": 4294972934
+    },
+    {
+      "AppUsage": [],
+      "IOUserClientCreator": "pid 1966, App26",
+      "id": 4294972939
+    },
+    {
+      "AppUsage": [
+        {
+          "API": "Metal",
+          "accumulatedGPUTime": 26863208,
+          "lastSubmittedTime": 1666860043000
+        },
+        {
+          "API": "Metal",
+          "accumulatedGPUTime": 8019208,
+          "lastSubmittedTime": 1526274383958
+        },
+        {
+          "API": "Metal",
+          "accumulatedGPUTime": 0,
+          "lastSubmittedTime": 0
+        }
+      ],
+      "IOUserClientCreator": "pid 3647, App27",
+      "id": 4294973138
+    },
+    {
+      "AppUsage": [],
+      "IOUserClientCreator": "pid 3651, App28",
+      "id": 4294973140
+    },
+    {
+      "AppUsage": [],
+      "IOUserClientCreator": "pid 3658, App29",
+      "id": 4294973213
+    },
+    {
+      "AppUsage": [
+        {
+          "API": "Metal",
+          "accumulatedGPUTime": 1172833,
+          "lastSubmittedTime": 1669595034333
+        }
+      ],
+      "IOUserClientCreator": "pid 3684, App30",
+      "id": 4294974721
+    },
+    {
+      "AppUsage": [
+        {
+          "API": "Metal",
+          "accumulatedGPUTime": 2410416,
+          "lastSubmittedTime": 2029213598500
+        }
+      ],
+      "IOUserClientCreator": "pid 719, App31",
+      "id": 4294974744
+    },
+    {
+      "AppUsage": [],
+      "IOUserClientCreator": "pid 6363, App07",
+      "id": 4294974957
+    },
+    {
+      "AppUsage": [],
+      "IOUserClientCreator": "pid 6365, App07",
+      "id": 4294974967
+    },
+    {
+      "AppUsage": [],
+      "IOUserClientCreator": "pid 6367, App32",
+      "id": 4294975021
+    },
+    {
+      "AppUsage": [],
+      "IOUserClientCreator": "pid 7636, App33",
+      "id": 4294986351
+    },
+    {
+      "AppUsage": [
+        {
+          "API": "Metal",
+          "accumulatedGPUTime": 1166718750,
+          "lastSubmittedTime": 4954662422666
+        }
+      ],
+      "IOUserClientCreator": "pid 9233, gpu-spike",
+      "id": 4294986535
+    }
+  ],
+  "gpu-core-count": 12,
+  "model": "Apple M6"
+}

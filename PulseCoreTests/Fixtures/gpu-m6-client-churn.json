@@ -1,0 +1,85 @@
+[
+  {
+    "clients" : [
+
+    ],
+    "step" : "start"
+  },
+  {
+    "clients" : [
+      {
+        "AppUsage" : [
+
+        ],
+        "id" : 4294986533,
+        "IOUserClientCreator" : "pid 9223, gpu-spike"
+      }
+    ],
+    "step" : "device"
+  },
+  {
+    "clients" : [
+      {
+        "AppUsage" : [
+          {
+            "accumulatedGPUTime" : 979844666,
+            "API" : "Metal",
+            "lastSubmittedTime" : 4950127731000
+          }
+        ],
+        "id" : 4294986533,
+        "IOUserClientCreator" : "pid 9223, gpu-spike"
+      }
+    ],
+    "step" : "queue + work"
+  },
+  {
+    "clients" : [
+      {
+        "AppUsage" : [
+          {
+            "accumulatedGPUTime" : 979844666,
+            "API" : "Metal",
+            "lastSubmittedTime" : 4950127731000
+          },
+          {
+            "accumulatedGPUTime" : 978373458,
+            "API" : "Metal",
+            "lastSubmittedTime" : 4951139004791
+          }
+        ],
+        "id" : 4294986533,
+        "IOUserClientCreator" : "pid 9223, gpu-spike"
+      }
+    ],
+    "step" : "second queue"
+  },
+  {
+    "clients" : [
+      {
+        "AppUsage" : [
+          {
+            "accumulatedGPUTime" : 979844666,
+            "API" : "Metal",
+            "lastSubmittedTime" : 4950127731000
+          }
+        ],
+        "id" : 4294986533,
+        "IOUserClientCreator" : "pid 9223, gpu-spike"
+      }
+    ],
+    "step" : "second freed"
+  },
+  {
+    "clients" : [
+      {
+        "AppUsage" : [
+
+        ],
+        "id" : 4294986533,
+        "IOUserClientCreator" : "pid 9223, gpu-spike"
+      }
+    ],
+    "step" : "all freed"
+  }
+]
