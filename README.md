@@ -8,7 +8,7 @@ item for charts, details and the busiest processes. It reads CPU and GPU watts, 
 temperatures without an admin password, keeps 30 days of history, and records workload sessions with
 throttling detection. With the panels closed it uses about 0.5% CPU and 25-40 MB of memory.
 
-> **Status: v0.6.1, in development.** Milestones M0-M4 and M6 are done. M5 (ports and chargers) is
+> **Status: v0.6.2, in development.** Milestones M0-M4 and M6 are done. M5 (ports and chargers) is
 > built but waiting on hardware tests, and M7 (polish) is in progress. See [`SPEC.md`](SPEC.md) and
 > the findings in [`docs/`](docs/).
 
