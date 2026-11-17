@@ -57,6 +57,18 @@ public struct AlertSettings: Codable, Equatable, Sendable {
     }
 }
 
+extension AlertSettings {
+    /// Alerts this version doesn't know are dropped rather than failing the alert settings.
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        enabled = try container.decodeLenientSet(Set<AlertKind>.self, forKey: .enabled)
+        chipCelsius = try container.decode(Double.self, forKey: .chipCelsius)
+        swapGrowthBytes = try container.decode(Double.self, forKey: .swapGrowthBytes)
+        minimumFreeBytes = try container.decode(Double.self, forKey: .minimumFreeBytes)
+        minimumBatteryHealth = try container.decode(Double.self, forKey: .minimumBatteryHealth)
+    }
+}
+
 public struct AlertEvent: Sendable, Equatable {
     public let kind: AlertKind
     public let title: String

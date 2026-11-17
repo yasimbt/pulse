@@ -154,6 +154,44 @@ private func process(_ pid: Int32, cpu: UInt64, footprint: UInt64 = 0, read: UIn
     #expect(saved.sampleInterval == 5)
 }
 
+/// Settings written by a newer Pulse, with a module, renderer, alert and HUD corner this version
+/// doesn't know. They used to fail to decode, and the app then reset every setting.
+@Test func settingsFromANewerVersionKeepWhatTheyCan() throws {
+    let newer = Data(#"""
+    {
+      "modules": [
+        {"kind": "cpu", "isEnabled": true, "renderer": "sparkline", "tint": "green"},
+        {"kind": "gpu", "isEnabled": true, "renderer": "bar", "tint": "system"},
+        {"kind": "memory", "isEnabled": true, "renderer": "hologram", "tint": "ultraviolet"}
+      ],
+      "sampleInterval": 2,
+      "isCombined": true,
+      "metricsServerPort": 9466,
+      "alerts": {
+        "enabled": ["chipTemperature", "gpuTemperature"],
+        "chipCelsius": 90, "swapGrowthBytes": 1, "minimumFreeBytes": 2, "minimumBatteryHealth": 0.7
+      },
+      "rules": {
+        "onBattery": {"sampleInterval": 5, "hiddenModules": ["gpu", "power"]},
+        "lowPowerMode": {"hiddenModules": []}
+      },
+      "hud": {"isVisible": true, "corner": "middle"}
+    }
+    """#.utf8)
+    let settings = try JSONDecoder().decode(PulseSettings.self, from: newer)
+    #expect(settings.modules == [
+        ModuleConfig(kind: .cpu, isEnabled: true, renderer: .sparkline, tint: .green),
+        ModuleConfig(kind: .memory, isEnabled: true, renderer: .text, tint: .system)
+    ])
+    #expect(settings.sampleInterval == 2)
+    #expect(settings.isCombined)
+    #expect(settings.metricsServerPort == 9466)
+    #expect(settings.alerts?.enabled == [.chipTemperature])
+    #expect(settings.alerts?.chipCelsius == 90)
+    #expect(settings.rules?.onBattery == RuleActions(sampleInterval: 5, hiddenModules: [.power]))
+    #expect(settings.hud == nil, "an unreadable HUD falls back on its own")
+}
+
 @Test func settingsRoundTripThroughJSON() throws {
     let data = try JSONEncoder().encode(PulseSettings.default)
     #expect(try JSONDecoder().decode(PulseSettings.self, from: data) == PulseSettings.default)

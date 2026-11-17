@@ -74,3 +74,12 @@ public enum Rules {
         return result
     }
 }
+
+extension RuleActions {
+    /// Modules this version doesn't know are dropped rather than failing the rules.
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        sampleInterval = try container.decodeIfPresent(Double.self, forKey: .sampleInterval)
+        hiddenModules = try container.decodeLenientSet(Set<ModuleKind>.self, forKey: .hiddenModules)
+    }
+}

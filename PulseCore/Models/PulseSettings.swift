@@ -158,3 +158,32 @@ public struct PulseSettings: Codable, Equatable, Sendable {
         )
     }
 }
+
+// Lenient decoding, so that settings saved by a newer Pulse still load. See LenientDecoding.swift.
+
+extension ModuleConfig {
+    /// An unknown kind fails, so the module is skipped. An unknown renderer or tint falls back to
+    /// the default and keeps the module.
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        kind = try container.decode(ModuleKind.self, forKey: .kind)
+        isEnabled = try container.decode(Bool.self, forKey: .isEnabled)
+        renderer = container.decodeLenientIfPresent(RendererKind.self, forKey: .renderer) ?? .text
+        tint = container.decodeLenientIfPresent(ModuleTint.self, forKey: .tint) ?? .system
+    }
+}
+
+extension PulseSettings {
+    /// Skips modules this version doesn't know. Alerts, rules or the HUD that can't be read fall
+    /// back to their defaults on their own, rather than taking every other setting with them.
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        modules = try container.decodeLenientArray([ModuleConfig].self, forKey: .modules)
+        sampleInterval = try container.decode(Double.self, forKey: .sampleInterval)
+        isCombined = try container.decode(Bool.self, forKey: .isCombined)
+        metricsServerPort = container.decodeLenientIfPresent(Int.self, forKey: .metricsServerPort)
+        alerts = container.decodeLenientIfPresent(AlertSettings.self, forKey: .alerts)
+        rules = container.decodeLenientIfPresent(RuleSettings.self, forKey: .rules)
+        hud = container.decodeLenientIfPresent(HUDSettings.self, forKey: .hud)
+    }
+}
