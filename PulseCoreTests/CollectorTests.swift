@@ -55,3 +55,19 @@ private struct StubCollector: Collector {
     let detailed = try #require(try await power.sample().cluster(.performance))
     #expect((0...1).contains(detailed.activeFraction ?? -1))
 }
+
+/// Closing and reopening the Power panel drops and recreates the detail subscription, which is
+/// now released. Reading must keep working across those cycles.
+@Test func powerDetailSurvivesRepeatedToggling() async throws {
+    let power = PowerCollector()
+    _ = try await power.sample()
+    for _ in 0..<5 {
+        await power.setDetail(true)
+        _ = try await power.sample()
+        await power.setDetail(false)
+    }
+    await power.setDetail(true)
+    _ = try await power.sample()
+    try await Task.sleep(for: .milliseconds(300))
+    #expect(try await power.sample().cluster(.performance)?.activeFraction != nil)
+}
