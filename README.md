@@ -149,3 +149,7 @@ To type just `pulse-cli`, link it onto your `PATH`, for example
 | `CLAUDE.md` | Instructions for Claude Code, which is used to develop Pulse |
 
 PulseCore has no UI code, so the app, `pulse-cli` and the tests all share it.
+
+## Licence
+
+Pulse is released under the [MIT licence](LICENSE).
